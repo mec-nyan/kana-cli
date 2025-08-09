@@ -6,39 +6,61 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type step int
-
-const (
-	stepMainMenu step = iota
-	stepModeMenu
-	stepExit
-)
-
 type option struct {
-	name string
+	name     string
 	selected bool
 }
 
+type step struct {
+	name    string
+	options []option
+}
+
 type model struct {
-	cursor  int
-	choices []option
-	step    step
+	cursor      int
+	steps       []step
+	currentStep int
 }
 
 func InitialModel() tea.Model {
 	return model{
-		cursor:  0,
-		choices: []option{
+		cursor: 0,
+		currentStep: 0,
+		steps: []step{
 			{
-				name: "new game",
-				selected: false,
+				name: "Start",
+				options: []option{
+					{
+						name: "new game",
+					},
+					{
+						name: "saved",
+					},
+				},
 			},
 			{
-				name: "saved",
-				selected: false,
+				name: "Syllabary",
+				options: []option{
+					{
+						name: "hiragana",
+					},
+					{
+						name: "katakana",
+					},
+				},
+			},
+			{
+				name: "Play sound",
+				options: []option{
+					{
+						name: "on",
+					},
+					{
+						name: "off",
+					},
+				},
 			},
 		},
-		step:    stepMainMenu,
 	}
 }
 
@@ -47,6 +69,8 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	options := m.steps[m.currentStep].options
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 
@@ -55,7 +79,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "ctrl+n", "j":
-			if m.cursor < len(m.choices) - 1 {
+			if m.cursor < len(options)-1 {
 				m.cursor++
 			}
 
@@ -65,12 +89,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "enter", " ":
-			for i := range m.choices {
+			for i := range options {
 				if i == m.cursor {
-					m.choices[i].selected = !m.choices[i].selected
+					options[i].selected = true
 				} else {
-					m.choices[i].selected = false
+					options[i].selected = false
 				}
+			}
+			m.steps[m.currentStep].options = options
+			m.currentStep++
+			m.cursor = 0
+
+			// For now, just quit.
+			if m.currentStep == len(m.steps) {
+				return m, tea.Quit
 			}
 		}
 	}
@@ -79,20 +111,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	s := "Select an option:\n"
+	if m.currentStep == len(m.steps) {
+		return "END"
+	}
 
-	for i, choice := range m.choices {
-		cursor := "  "
+	options := m.steps[m.currentStep]
+
+	s := options.name + ":\n\n"
+
+	for i, choice := range options.options {
+		cursor := " "
 		if m.cursor == i {
-			cursor = "->"
+			cursor = ">"
 		}
 
-		checked := " "
-		if choice.selected {
-			checked = "x"
-		}
-
-		s += fmt.Sprintf("  %s [%s] %s\n", cursor, checked, choice.name)
+		s += fmt.Sprintf("  %s %s\n", cursor, choice.name)
 	}
 
 	s += "\n\n[j] next - [k] prev - [q] quit\n"
