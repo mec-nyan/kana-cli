@@ -1,10 +1,13 @@
 module github.com/mec-nyan/kana-cli
 
-go 1.23.0
+go 1.23.4
 
 toolchain go1.24.6
 
-require github.com/charmbracelet/bubbletea v1.3.6
+require (
+	github.com/charmbracelet/bubbletea v1.3.6
+	github.com/mec-nyan/kana-master v0.0.0-20250519215441-3f4578c2999c
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
