@@ -10,8 +10,19 @@ import (
 
 func main() {
 	p := tea.NewProgram(ui.InitialModel())
-	if _, err := p.Run(); err != nil {
+	if model, err := p.Run(); err != nil {
 		fmt.Printf("Ups! Shit happens dude!\n")
 		os.Exit(1)
+	} else {
+		fmt.Printf("You've selected:\n\n")
+		m := model.(ui.Model)
+		for _, step := range m.Steps {
+			fmt.Printf("  %s -> ", step.Name)
+			for _, choice := range step.Options {
+				if choice.Selected {
+					fmt.Printf("%s\n", choice.Name)
+				}
+			}
+		}
 	}
 }

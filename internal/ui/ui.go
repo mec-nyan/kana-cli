@@ -7,56 +7,56 @@ import (
 )
 
 type option struct {
-	name     string
-	selected bool
+	Name     string
+	Selected bool
 }
 
 type step struct {
-	name    string
-	options []option
+	Name    string
+	Options []option
 }
 
-type model struct {
-	cursor      int
-	steps       []step
-	currentStep int
+type Model struct {
+	Cursor      int
+	Steps       []step
+	CurrentStep int
 }
 
 func InitialModel() tea.Model {
-	return model{
-		cursor: 0,
-		currentStep: 0,
-		steps: []step{
+	return Model{
+		Cursor: 0,
+		CurrentStep: 0,
+		Steps: []step{
 			{
-				name: "Start",
-				options: []option{
+				Name: "Start",
+				Options: []option{
 					{
-						name: "new game",
+						Name: "new game",
 					},
 					{
-						name: "saved",
+						Name: "saved",
 					},
 				},
 			},
 			{
-				name: "Syllabary",
-				options: []option{
+				Name: "Syllabary",
+				Options: []option{
 					{
-						name: "hiragana",
+						Name: "hiragana",
 					},
 					{
-						name: "katakana",
+						Name: "katakana",
 					},
 				},
 			},
 			{
-				name: "Play sound",
-				options: []option{
+				Name: "Sound",
+				Options: []option{
 					{
-						name: "on",
+						Name: "on",
 					},
 					{
-						name: "off",
+						Name: "off",
 					},
 				},
 			},
@@ -64,12 +64,12 @@ func InitialModel() tea.Model {
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	options := m.steps[m.currentStep].options
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	options := m.Steps[m.CurrentStep].Options
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -79,29 +79,29 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "ctrl+n", "j":
-			if m.cursor < len(options)-1 {
-				m.cursor++
+			if m.Cursor < len(options)-1 {
+				m.Cursor++
 			}
 
 		case "ctrl+p", "k":
-			if m.cursor > 0 {
-				m.cursor--
+			if m.Cursor > 0 {
+				m.Cursor--
 			}
 
 		case "enter", " ":
 			for i := range options {
-				if i == m.cursor {
-					options[i].selected = true
+				if i == m.Cursor {
+					options[i].Selected = true
 				} else {
-					options[i].selected = false
+					options[i].Selected = false
 				}
 			}
-			m.steps[m.currentStep].options = options
-			m.currentStep++
-			m.cursor = 0
+			m.Steps[m.CurrentStep].Options = options
+			m.CurrentStep++
+			m.Cursor = 0
 
 			// For now, just quit.
-			if m.currentStep == len(m.steps) {
+			if m.CurrentStep == len(m.Steps) {
 				return m, tea.Quit
 			}
 		}
@@ -110,22 +110,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
-	if m.currentStep == len(m.steps) {
-		return "END"
+func (m Model) View() string {
+	if m.CurrentStep == len(m.Steps) {
+		return ""
 	}
 
-	options := m.steps[m.currentStep]
+	options := m.Steps[m.CurrentStep]
 
-	s := options.name + ":\n\n"
+	s := options.Name + ":\n\n"
 
-	for i, choice := range options.options {
+	for i, choice := range options.Options {
 		cursor := " "
-		if m.cursor == i {
+		if m.Cursor == i {
 			cursor = ">"
 		}
 
-		s += fmt.Sprintf("  %s %s\n", cursor, choice.name)
+		s += fmt.Sprintf("  %s %s\n", cursor, choice.Name)
 	}
 
 	s += "\n\n[j] next - [k] prev - [q] quit\n"
