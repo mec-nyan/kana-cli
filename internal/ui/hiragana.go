@@ -29,6 +29,9 @@ type question struct {
 type KanaModel struct {
 	Questions []question
 	current   int
+	input     string
+	tries     int
+	quit      bool
 }
 
 func KanaInitialModel() tea.Model {
@@ -56,14 +59,26 @@ func (m KanaModel) Init() tea.Cmd {
 }
 
 func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	q := m.Questions[m.current]
+
 	switch msg := msg.(type) {
+
 	case tea.KeyMsg:
 
 		switch msg.String() {
 		case "ctrl+c", "q":
+			m.quit = true
 			return m, tea.Quit
+		case "backspace":
+			m.input = ""
+		case "enter", " ":
+			m.tries++
+			if m.input == q.romaji[0] {
+				m.current++
+			}
+			m.input = ""
 		default:
-			m.current++
+			m.input += msg.String()
 		}
 	}
 	return m, nil
@@ -74,17 +89,25 @@ func (m KanaModel) View() string {
 		return "All done!"
 	}
 
+	if m.quit {
+		return "Good bye then!"
+	}
+
 	q := m.Questions[m.current]
 
 	progress := 100.0 / float64(len(m.Questions)) * float64(m.current)
+	accuracy := 0.0
+	if m.tries > 0 {
+		accuracy = float64(m.current) / float64(m.tries) * 100.0
+	}
 
 	s := fmt.Sprintf("Hiragana: %s\n\n", q.hiragana)
 
-	s += "Write in romaji: _\n\n"
+	s += fmt.Sprintf("Write in romaji: %s_\n\n", m.input)
 
 	s += "Hint: (...)\n\n"
 
-	s += fmt.Sprintf("Progress: %.1f%%\n\n", progress)
+	s += fmt.Sprintf("Progress: %.1f%% - Accuracy: %.1f%%\n\n", progress, accuracy)
 
 	return s
 }
