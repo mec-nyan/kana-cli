@@ -40,6 +40,9 @@ func KanaInitialModel() tea.Model {
 	for _, table := range kana.Table {
 		// For now, only monographs
 		for _, row := range table.Basic.Monographs {
+			if row.Hiragana == "" {
+				continue
+			}
 			var q question
 			q.hiragana = row.Hiragana
 			q.romaji = []string{row.Romaji}
@@ -65,22 +68,33 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 
-		switch msg.String() {
-		case "ctrl+c", "q":
+		switch s := msg.String(); s {
+		case "ctrl+c", "esc":
 			m.quit = true
 			return m, tea.Quit
 		case "backspace":
 			m.input = ""
 		case "enter", " ":
 			m.tries++
-			if m.input == q.romaji[0] {
-				m.current++
+			guess := m.input
+			// There may be different romaji associated to this kana.
+			for _, rmj := range q.romaji {
+				if guess == rmj {
+					m.current++
+				}
 			}
 			m.input = ""
 		default:
-			m.input += msg.String()
+			if len(s) == 1 && s[0] >= 'a' && s[0] <= 'z' {
+				m.input += s
+			}
 		}
 	}
+
+	if m.current == len(m.Questions) {
+		return m, tea.Quit
+	}
+
 	return m, nil
 }
 
@@ -101,13 +115,14 @@ func (m KanaModel) View() string {
 		accuracy = float64(m.current) / float64(m.tries) * 100.0
 	}
 
-	s := fmt.Sprintf("Hiragana: %s\n\n", q.hiragana)
+	s := fmt.Sprintf("\n\tHiragana: %s\n\n", q.hiragana)
 
-	s += fmt.Sprintf("Write in romaji: %s_\n\n", m.input)
+	s += fmt.Sprintf("\tWrite in romaji: %s_\n\n", m.input)
 
-	s += "Hint: (...)\n\n"
+	s += "\tHint: (...)\n\n"
 
-	s += fmt.Sprintf("Progress: %.1f%% - Accuracy: %.1f%%\n\n", progress, accuracy)
+	s += fmt.Sprintf("\tProgress: %.1f%% - Accuracy: %.1f%%\n\n", progress, accuracy)
 
+	s += "\t[3;38:5:8mPress <esc> to quit.[0m"
 	return s
 }
