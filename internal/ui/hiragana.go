@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -49,10 +51,31 @@ type (
 		// your input is compared with the current kana each time and move
 		// to the next question as soon as it it correct.
 		autoMode bool
+		keys     keyMap
+		help     help.Model
+	}
+
+	keyMap struct {
+		Show    key.Binding
+		Accept  key.Binding
+		Back    key.Binding
+		Command key.Binding
+		Help    key.Binding
+		Quit    key.Binding
 	}
 
 	errMsg error
 )
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Show}
+}
+
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Show}, {k.Accept}, {k.Back}, {k.Command}, {k.Help}, {k.Quit},
+	}
+}
 
 func KanaInitialModel(testMode bool) tea.Model {
 	var questions []question
@@ -87,10 +110,39 @@ func KanaInitialModel(testMode bool) tea.Model {
 
 	prog := progress.New()
 
+	keys := keyMap{
+		Show: key.NewBinding(
+			key.WithKeys(";"),
+			key.WithHelp(";", "toggle keys"),
+		),
+		Accept: key.NewBinding(
+			key.WithKeys(" ", tea.KeyEnter.String()),
+			key.WithHelp("space", "accept"),
+		),
+		Back: key.NewBinding(
+			key.WithKeys(tea.KeyCtrlO.String()),
+			key.WithHelp("ctrl+o", "back"),
+		),
+		Command: key.NewBinding(
+			key.WithKeys(":"),
+			key.WithHelp(":", "cmd mode"),
+		),
+		Help: key.NewBinding(
+			key.WithKeys("?"),
+			key.WithHelp("?", "help"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys("q", tea.KeyEsc.String(), tea.KeyCtrlC.String()),
+			key.WithHelp("q", "quit"),
+		),
+	}
+
 	return KanaModel{
 		Questions: questions,
 		textInput: ti,
 		progress:  prog,
+		keys:      keys,
+		help:      help.New(),
 	}
 }
 
@@ -109,15 +161,15 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 
-		switch msg.String() {
+		switch {
 		// There's no hiragana/katakana that starts with "q".
 		// We can safely use this to quit.
-		case tea.KeyCtrlC.String(), tea.KeyEsc.String(), tea.KeyCtrlD.String(), "q":
+		case key.Matches(msg, m.keys.Quit):
 			m.quit = true
 			return m, tea.Quit
 
 		// Use both enter or space to accept input value.
-		case tea.KeyEnter.String(), tea.KeySpace.String():
+		case key.Matches(msg, m.keys.Accept):
 			m.tries++
 			guess := m.textInput.Value()
 			for _, rmj := range q.romaji {
@@ -129,6 +181,18 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 			m.textInput.Reset()
+			return m, nil
+
+		case key.Matches(msg, m.keys.Show):
+			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
+
+		case key.Matches(msg, m.keys.Help):
+			// TODO
+			return m, nil
+
+		case key.Matches(msg, m.keys.Command):
+			// TODO
 			return m, nil
 		}
 
@@ -173,13 +237,13 @@ func (m KanaModel) View() string {
 
 %sProgress: %0.1f%% - Accuracy: %0.1f%%
 
-%s[3;38:5:8mPress <esc> to quit.[0m`,
+%s%s`,
 		paddingLeft, m.progress.ViewAs(progress/100),
 		paddingLeft, q.hiragana,
 		paddingLeft, m.textInput.View(),
 		paddingLeft,
 		paddingLeft, progress, accuracy,
-		paddingLeft)
+		paddingLeft, m.help.View(m.keys))
 
 	return s
 }
