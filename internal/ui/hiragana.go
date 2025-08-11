@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mec-nyan/kana-master/pkg/kana"
 )
@@ -20,19 +21,25 @@ Progress: x% ||||||||||||||||____
 
 */
 
-type question struct {
-	hiragana string
-	romaji   []string
-	played   bool
-}
+type (
+	question struct {
+		hiragana string
+		romaji   []string
+		played   bool
+	}
 
-type KanaModel struct {
-	Questions []question
-	current   int
-	input     string
-	tries     int
-	quit      bool
-}
+	KanaModel struct {
+		Questions []question
+		current   int
+		textInput textinput.Model
+		input     string
+		tries     int
+		quit      bool
+		err       error
+	}
+
+	errMsg error
+)
 
 func KanaInitialModel() tea.Model {
 	var questions []question
@@ -52,8 +59,17 @@ func KanaInitialModel() tea.Model {
 			questions = append(questions, q)
 		}
 	}
+
+	ti := textinput.New()
+	ti.Placeholder = "..."
+	ti.Focus()
+	ti.CharLimit = 5
+	ti.Width = 5
+	ti.Prompt = ""
+
 	return KanaModel{
 		Questions: questions,
+		textInput: ti,
 	}
 }
 
@@ -68,34 +84,39 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 
-		switch s := msg.String(); s {
-		case "ctrl+c", "esc":
+		switch msg.String() {
+		// There's no hiragana/katakana that starts with "q".
+		// We can safely use this to quit.
+		case tea.KeyCtrlC.String(), tea.KeyEsc.String(), tea.KeyCtrlD.String(), "q":
 			m.quit = true
 			return m, tea.Quit
-		case "backspace":
-			m.input = ""
-		case "enter", " ":
+
+		// Use both enter or space to accept input value.
+		case tea.KeyEnter.String(), tea.KeySpace.String():
 			m.tries++
-			guess := m.input
-			// There may be different romaji associated to this kana.
+			guess := m.textInput.Value()
 			for _, rmj := range q.romaji {
 				if guess == rmj {
 					m.current++
 				}
 			}
-			m.input = ""
-		default:
-			if len(s) == 1 && s[0] >= 'a' && s[0] <= 'z' {
-				m.input += s
-			}
+			m.textInput.Reset()
+			return m, nil
 		}
+
+	case errMsg:
+		m.err = msg
+		return m, nil
 	}
+
+	var cmd tea.Cmd
+	m.textInput, cmd = m.textInput.Update(msg)
 
 	if m.current == len(m.Questions) {
 		return m, tea.Quit
 	}
 
-	return m, nil
+	return m, cmd
 }
 
 func (m KanaModel) View() string {
@@ -117,7 +138,7 @@ func (m KanaModel) View() string {
 
 	s := fmt.Sprintf("\n\tHiragana: %s\n\n", q.hiragana)
 
-	s += fmt.Sprintf("\tWrite in romaji: %s_\n\n", m.input)
+	s += fmt.Sprintf("\tWrite in romaji: %s\n\n", m.textInput.View())
 
 	s += "\tHint: (...)\n\n"
 
