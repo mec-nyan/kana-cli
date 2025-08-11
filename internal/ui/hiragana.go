@@ -9,30 +9,20 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/mec-nyan/kana-master/pkg/kana"
 )
 
-/*
-This UI will look something like this:
-
-Hiragana: あ
-
-Write in romaji: _
-
-Hint: (a i u e o)
-
-Progress: x% ||||||||||||||||____
-
-*/
-
 const (
-	padding = 4
+	padding     = 4
+	maxBarWidth = 80
 )
 
 type (
 	question struct {
 		hiragana string
 		romaji   []string
+		hints    []string
 		played   bool
 	}
 
@@ -53,6 +43,8 @@ type (
 		autoMode bool
 		keys     keyMap
 		help     help.Model
+		style    lipgloss.Style
+		hint     bool
 	}
 
 	keyMap struct {
@@ -60,6 +52,7 @@ type (
 		Accept  key.Binding
 		Back    key.Binding
 		Command key.Binding
+		Hint    key.Binding
 		Help    key.Binding
 		Quit    key.Binding
 	}
@@ -73,7 +66,7 @@ func (k keyMap) ShortHelp() []key.Binding {
 
 func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Show}, {k.Accept}, {k.Back}, {k.Command}, {k.Help}, {k.Quit},
+		{k.Show, k.Accept, k.Back, k.Hint, k.Command, k.Help, k.Quit},
 	}
 }
 
@@ -82,6 +75,21 @@ func KanaInitialModel(testMode bool) tea.Model {
 	// TODO: Shuffle
 	for _, table := range kana.Table {
 		// For now, only monographs
+
+		var hints []string
+		for _, row := range table.Basic.Monographs {
+			if row.Hiragana == "" {
+				continue
+			}
+			var nextHint string
+			if row.Alt != "" {
+				nextHint = row.Alt
+			} else {
+				nextHint = row.Romaji
+			}
+			hints = append(hints, nextHint)
+		}
+
 		for _, row := range table.Basic.Monographs {
 			if row.Hiragana == "" {
 				continue
@@ -92,6 +100,7 @@ func KanaInitialModel(testMode bool) tea.Model {
 			if row.Alt != "" {
 				q.romaji = append(q.romaji, row.Alt)
 			}
+			q.hints = hints
 			questions = append(questions, q)
 		}
 
@@ -102,13 +111,15 @@ func KanaInitialModel(testMode bool) tea.Model {
 	}
 
 	ti := textinput.New()
-	ti.Placeholder = "..."
+	ti.Placeholder = ""
 	ti.Focus()
 	ti.CharLimit = 5
 	ti.Width = 5
 	ti.Prompt = ""
 
-	prog := progress.New()
+	prog := progress.New(progress.WithGradient(mauve, sapphire), progress.WithFillCharacters('▂', '▂'))
+	prog.EmptyColor = surface0
+	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(subtext0))
 
 	keys := keyMap{
 		Show: key.NewBinding(
@@ -122,6 +133,10 @@ func KanaInitialModel(testMode bool) tea.Model {
 		Back: key.NewBinding(
 			key.WithKeys(tea.KeyCtrlO.String()),
 			key.WithHelp("ctrl+o", "back"),
+		),
+		Hint: key.NewBinding(
+			key.WithKeys("/"),
+			key.WithHelp("/", "gimme a hint"),
 		),
 		Command: key.NewBinding(
 			key.WithKeys(":"),
@@ -143,6 +158,7 @@ func KanaInitialModel(testMode bool) tea.Model {
 		progress:  prog,
 		keys:      keys,
 		help:      help.New(),
+		style:     lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(subtext1)),
 	}
 }
 
@@ -156,7 +172,8 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.progress.Width = msg.Width - padding*2
+		m.style = m.style.Width(msg.Width)
+		m.progress.Width = min(msg.Width-padding*2, maxBarWidth)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -170,6 +187,7 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Use both enter or space to accept input value.
 		case key.Matches(msg, m.keys.Accept):
+			m.hint = false
 			m.tries++
 			guess := m.textInput.Value()
 			for _, rmj := range q.romaji {
@@ -185,6 +203,10 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case key.Matches(msg, m.keys.Show):
 			m.help.ShowAll = !m.help.ShowAll
+			return m, nil
+
+		case key.Matches(msg, m.keys.Hint):
+			m.hint = !m.hint
 			return m, nil
 
 		case key.Matches(msg, m.keys.Help):
@@ -217,7 +239,11 @@ func (m KanaModel) View() string {
 	}
 
 	q := m.Questions[m.current]
-	paddingLeft := strings.Repeat(" ", padding)
+
+	hint := "Hint: ..."
+	if m.hint {
+		hint = "Hint: " + strings.Join(q.hints, ", ")
+	}
 
 	progress := 100.0 / float64(len(m.Questions)) * float64(m.current)
 	accuracy := 0.0
@@ -226,24 +252,23 @@ func (m KanaModel) View() string {
 	}
 
 	// TODO: Use lipgloss for padding and styling!
-	s := fmt.Sprintf(`
-%s%s
+	s := fmt.Sprintf(`%s
 
-%sHiragana: %s
+Hiragana: %s
 
-%sWrite in romaji: %s
+Write in romaji: %s
 
-%sHint: (...)
+%s 
 
-%sProgress: %0.1f%% - Accuracy: %0.1f%%
+Accuracy: %0.1f%%
 
-%s%s`,
-		paddingLeft, m.progress.ViewAs(progress/100),
-		paddingLeft, q.hiragana,
-		paddingLeft, m.textInput.View(),
-		paddingLeft,
-		paddingLeft, progress, accuracy,
-		paddingLeft, m.help.View(m.keys))
+%s`,
+		m.progress.ViewAs(progress/100),
+		q.hiragana,
+		m.textInput.View(),
+		lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(overlay0)).Render(hint),
+		accuracy,
+		m.help.View(m.keys))
 
-	return s
+	return m.style.Render(s)
 }
