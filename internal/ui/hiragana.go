@@ -54,7 +54,7 @@ type (
 	errMsg error
 )
 
-func KanaInitialModel() tea.Model {
+func KanaInitialModel(testMode bool) tea.Model {
 	var questions []question
 	// TODO: Shuffle
 	for _, table := range kana.Table {
@@ -70,6 +70,11 @@ func KanaInitialModel() tea.Model {
 				q.romaji = append(q.romaji, row.Alt)
 			}
 			questions = append(questions, q)
+		}
+
+		// Play only one row in test mode.
+		if testMode {
+			break
 		}
 	}
 
