@@ -2,7 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/mec-nyan/kana-master/pkg/kana"
@@ -21,6 +23,10 @@ Progress: x% ||||||||||||||||____
 
 */
 
+const (
+	padding = 4
+)
+
 type (
 	question struct {
 		hiragana string
@@ -32,10 +38,17 @@ type (
 		Questions []question
 		current   int
 		textInput textinput.Model
-		input     string
 		tries     int
+		percent   int
+		progress  progress.Model
 		quit      bool
 		err       error
+		// TODO: Not implemented yet!
+		// Add a menu entry to select autoMode "on/off".
+		// In autoMode, you don't need to press enter or space,
+		// your input is compared with the current kana each time and move
+		// to the next question as soon as it it correct.
+		autoMode bool
 	}
 
 	errMsg error
@@ -67,9 +80,12 @@ func KanaInitialModel() tea.Model {
 	ti.Width = 5
 	ti.Prompt = ""
 
+	prog := progress.New()
+
 	return KanaModel{
 		Questions: questions,
 		textInput: ti,
+		progress:  prog,
 	}
 }
 
@@ -81,6 +97,10 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	q := m.Questions[m.current]
 
 	switch msg := msg.(type) {
+
+	case tea.WindowSizeMsg:
+		m.progress.Width = msg.Width - padding*2
+		return m, nil
 
 	case tea.KeyMsg:
 
@@ -129,6 +149,7 @@ func (m KanaModel) View() string {
 	}
 
 	q := m.Questions[m.current]
+	paddingLeft := strings.Repeat(" ", padding)
 
 	progress := 100.0 / float64(len(m.Questions)) * float64(m.current)
 	accuracy := 0.0
@@ -136,14 +157,25 @@ func (m KanaModel) View() string {
 		accuracy = float64(m.current) / float64(m.tries) * 100.0
 	}
 
-	s := fmt.Sprintf("\n\tHiragana: %s\n\n", q.hiragana)
+	// TODO: Use lipgloss for padding and styling!
+	s := fmt.Sprintf(`
+%s%s
 
-	s += fmt.Sprintf("\tWrite in romaji: %s\n\n", m.textInput.View())
+%sHiragana: %s
 
-	s += "\tHint: (...)\n\n"
+%sWrite in romaji: %s
 
-	s += fmt.Sprintf("\tProgress: %.1f%% - Accuracy: %.1f%%\n\n", progress, accuracy)
+%sHint: (...)
 
-	s += "\t[3;38:5:8mPress <esc> to quit.[0m"
+%sProgress: %0.1f%% - Accuracy: %0.1f%%
+
+%s[3;38:5:8mPress <esc> to quit.[0m`,
+		paddingLeft, m.progress.ViewAs(progress/100),
+		paddingLeft, q.hiragana,
+		paddingLeft, m.textInput.View(),
+		paddingLeft,
+		paddingLeft, progress, accuracy,
+		paddingLeft)
+
 	return s
 }
