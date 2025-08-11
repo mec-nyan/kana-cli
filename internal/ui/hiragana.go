@@ -118,6 +118,9 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for _, rmj := range q.romaji {
 				if guess == rmj {
 					m.current++
+					if m.current == len(m.Questions) {
+						return m, tea.Quit
+					}
 				}
 			}
 			m.textInput.Reset()
@@ -131,10 +134,6 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	m.textInput, cmd = m.textInput.Update(msg)
-
-	if m.current == len(m.Questions) {
-		return m, tea.Quit
-	}
 
 	return m, cmd
 }
