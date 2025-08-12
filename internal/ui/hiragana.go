@@ -151,7 +151,7 @@ func KanaInitialModel(menu MainMenuModel, opts Options) tea.Model {
 		),
 		Menu: key.NewBinding(
 			key.WithKeys(tea.KeyCtrlO.String()),
-			key.WithHelp("ctrl+o", "back"),
+			key.WithHelp("ctrl+o", "back to main menu"),
 		),
 		Hint: key.NewBinding(
 			key.WithKeys("/"),
@@ -232,6 +232,9 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Command):
 			// TODO
 			return m, nil
+
+		case key.Matches(msg, m.keys.Menu):
+		return m.menu, nil
 
 		}
 
