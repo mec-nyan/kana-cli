@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -18,7 +19,19 @@ const (
 	maxBarWidth = 80
 )
 
+var (
+	appStyle       = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(lavender))
+	highlightStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(mauve))
+	inputStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color(teal))
+	hintStyle      = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(overlay0))
+)
+
 type (
+	Options struct {
+		Test bool
+		Auto bool
+	}
+
 	question struct {
 		hiragana string
 		romaji   []string
@@ -45,6 +58,8 @@ type (
 		help     help.Model
 		style    lipgloss.Style
 		hint     bool
+		end      bool
+		accuracy float64
 	}
 
 	keyMap struct {
@@ -58,6 +73,8 @@ type (
 	}
 
 	errMsg error
+
+	tickMsg struct{}
 )
 
 func (k keyMap) ShortHelp() []key.Binding {
@@ -70,7 +87,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-func KanaInitialModel(testMode bool) tea.Model {
+func KanaInitialModel(opts Options) tea.Model {
 	var questions []question
 	// TODO: Shuffle
 	for _, table := range kana.Table {
@@ -105,7 +122,7 @@ func KanaInitialModel(testMode bool) tea.Model {
 		}
 
 		// Play only one row in test mode.
-		if testMode {
+		if opts.Test {
 			break
 		}
 	}
@@ -116,6 +133,7 @@ func KanaInitialModel(testMode bool) tea.Model {
 	ti.CharLimit = 5
 	ti.Width = 5
 	ti.Prompt = ""
+	ti.TextStyle = inputStyle
 
 	prog := progress.New(progress.WithGradient(mauve, sapphire), progress.WithFillCharacters('▂', '▂'))
 	prog.EmptyColor = surface0
@@ -158,7 +176,8 @@ func KanaInitialModel(testMode bool) tea.Model {
 		progress:  prog,
 		keys:      keys,
 		help:      help.New(),
-		style:     lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(subtext1)),
+		style:     appStyle,
+		autoMode:  opts.Auto,
 	}
 }
 
@@ -167,9 +186,16 @@ func (m KanaModel) Init() tea.Cmd {
 }
 
 func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	q := m.Questions[m.current]
+	var q question
+	if m.current < len(m.Questions) {
+		q = m.Questions[m.current]
+	}
 
 	switch msg := msg.(type) {
+
+	case tickMsg:
+		m.quit = true
+		return m, tea.Quit
 
 	case tea.WindowSizeMsg:
 		m.style = m.style.Width(msg.Width)
@@ -187,19 +213,7 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Use both enter or space to accept input value.
 		case key.Matches(msg, m.keys.Accept):
-			m.hint = false
-			m.tries++
-			guess := m.textInput.Value()
-			for _, rmj := range q.romaji {
-				if guess == rmj {
-					m.current++
-					if m.current == len(m.Questions) {
-						return m, tea.Quit
-					}
-				}
-			}
-			m.textInput.Reset()
-			return m, nil
+			return m.checkAnswer(q)
 
 		case key.Matches(msg, m.keys.Show):
 			m.help.ShowAll = !m.help.ShowAll
@@ -216,6 +230,7 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Command):
 			// TODO
 			return m, nil
+
 		}
 
 	case errMsg:
@@ -230,12 +245,29 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m KanaModel) View() string {
-	if m.current == len(m.Questions) {
-		return "All done!"
-	}
-
 	if m.quit {
 		return "Good bye then!"
+	}
+
+	var s string
+
+	if m.end {
+		s = fmt.Sprintf(`%s
+
+You've done it!
+
+Accuracy: %0.1f%%
+
+%s`,
+			m.progress.ViewAs(1),
+			float64(len(m.Questions))/float64(m.tries)*100,
+			m.help.View(m.keys))
+
+		return m.style.Render(s)
+	}
+
+	if m.current >= len(m.Questions) {
+		return "Nope!"
 	}
 
 	q := m.Questions[m.current]
@@ -246,13 +278,12 @@ func (m KanaModel) View() string {
 	}
 
 	progress := 100.0 / float64(len(m.Questions)) * float64(m.current)
-	accuracy := 0.0
 	if m.tries > 0 {
-		accuracy = float64(m.current) / float64(m.tries) * 100.0
+		m.accuracy = float64(m.current) / float64(m.tries) * 100.0
 	}
 
 	// TODO: Use lipgloss for padding and styling!
-	s := fmt.Sprintf(`%s
+	s = fmt.Sprintf(`%s
 
 Hiragana: %s
 
@@ -264,11 +295,31 @@ Accuracy: %0.1f%%
 
 %s`,
 		m.progress.ViewAs(progress/100),
-		q.hiragana,
+		highlightStyle.Render(q.hiragana),
 		m.textInput.View(),
-		lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(overlay0)).Render(hint),
-		accuracy,
+		hintStyle.Render(hint),
+		m.accuracy,
 		m.help.View(m.keys))
 
 	return m.style.Render(s)
+}
+
+// TODO: How to check in autoMode?
+func (m KanaModel) checkAnswer(q question) (tea.Model, tea.Cmd) {
+	m.hint = false
+	m.tries++
+	guess := m.textInput.Value()
+	for _, rmj := range q.romaji {
+		if guess == rmj {
+			m.current++
+			if m.current == len(m.Questions) {
+				m.end = true
+				return m, tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
+					return tickMsg{}
+				})
+			}
+		}
+	}
+	m.textInput.Reset()
+	return m, nil
 }
