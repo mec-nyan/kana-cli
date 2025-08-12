@@ -28,6 +28,7 @@ type (
 	}
 
 	keyMap struct {
+		Show   key.Binding
 		Next   key.Binding
 		Prev   key.Binding
 		Accept key.Binding
@@ -44,17 +45,21 @@ type (
 )
 
 func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Quit}
+	return []key.Binding{k.Show}
 }
 
 func (k keyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Next, k.Prev, k.Accept, k.Quit},
+		{k.Show, k.Next, k.Prev, k.Accept, k.Quit},
 	}
 }
 
 func InitialModel() tea.Model {
 	keys := keyMap{
+		Show: key.NewBinding(
+			key.WithKeys(";"),
+			key.WithHelp(";", "toggle keys"),
+		),
 		Next: key.NewBinding(
 			key.WithKeys(tea.KeyCtrlN.String(), "j"),
 			key.WithHelp("j", "next"),
@@ -91,8 +96,8 @@ func InitialModel() tea.Model {
 				},
 			},
 		},
-		Keys: keys,
-		Help: help.New(),
+		Keys:  keys,
+		Help:  help.New(),
 		Style: appStyle,
 	}
 }
@@ -107,22 +112,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 		switch {
+
 		case key.Matches(msg, m.Keys.Next):
 			if m.Menu.Current < len(m.Menu.Options)-1 {
 				m.Menu.Current++
 			}
 			return m, nil
+
 		case key.Matches(msg, m.Keys.Prev):
 			if m.Menu.Current > 0 {
 				m.Menu.Current--
 			}
 			return m, nil
+
 		case key.Matches(msg, m.Keys.Accept):
 			// TODO:
 			return m, nil
+
 		case key.Matches(msg, m.Keys.Quit):
 			m.Quit = true
 			return m, tea.Quit
+
+		case key.Matches(msg, m.Keys.Show):
+			m.Help.ShowAll = !m.Help.ShowAll
+			return m, nil
 		}
 	}
 
@@ -131,7 +144,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) View() string {
 	if m.Quit {
-		return m.Style.Render("Bye!")
+		return ""
 	}
 
 	s := m.Menu.Title + "\n\n"
@@ -139,7 +152,7 @@ func (m Model) View() string {
 	for i, opt := range m.Menu.Options {
 		indicator := " "
 		if i == m.Current {
-			indicator = ">"
+			indicator = "▶"
 		}
 
 		s += fmt.Sprintf("%s %s\n\n", indicator, opt.Name)
