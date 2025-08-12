@@ -1,9 +1,12 @@
-package ui
+package hiragana
 
 import (
 	"fmt"
 	"strings"
 	"time"
+
+	. "github.com/mec-nyan/kana-cli/internal/palette"
+	"github.com/mec-nyan/kana-master/pkg/kana"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -11,7 +14,6 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/mec-nyan/kana-master/pkg/kana"
 )
 
 const (
@@ -20,10 +22,10 @@ const (
 )
 
 var (
-	appStyle       = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(lavender))
-	highlightStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(mauve))
-	inputStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color(teal))
-	hintStyle      = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(overlay0))
+	appStyle       = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(Lavender))
+	highlightStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(Mauve))
+	inputStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color(Teal))
+	hintStyle      = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(Overlay0))
 )
 
 type (
@@ -135,9 +137,9 @@ func KanaInitialModel(opts Options) tea.Model {
 	ti.Prompt = ""
 	ti.TextStyle = inputStyle
 
-	prog := progress.New(progress.WithGradient(mauve, sapphire), progress.WithFillCharacters('▂', '▂'))
-	prog.EmptyColor = surface0
-	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(subtext0))
+	prog := progress.New(progress.WithGradient(Mauve, Sapphire), progress.WithFillCharacters('▂', '▂'))
+	prog.EmptyColor = Surface0
+	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0))
 
 	keys := keyMap{
 		Show: key.NewBinding(

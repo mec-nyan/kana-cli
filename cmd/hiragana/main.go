@@ -6,7 +6,7 @@ import (
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/mec-nyan/kana-cli/internal/ui"
+	"github.com/mec-nyan/kana-cli/internal/ui/hiragana"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	autoMode := *autoModeShort || *autoModeLong
 
 	// TODO: Actually, there's gonna be an options menu that will handle this.
-	p := tea.NewProgram(ui.KanaInitialModel(ui.Options{
+	p := tea.NewProgram(hiragana.KanaInitialModel(hiragana.Options{
 		Test: testMode, Auto: autoMode}))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Ups! Shit happens dude!\n")
