@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	. "github.com/mec-nyan/kana-cli/internal/palette"
-	"github.com/mec-nyan/kana-cli/internal/ui/options"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -35,7 +34,7 @@ type (
 		Quit   key.Binding
 	}
 
-	Model struct {
+	MainMenuModel struct {
 		Menu
 		Help  help.Model
 		Keys  keyMap
@@ -78,7 +77,7 @@ func InitialModel() tea.Model {
 		),
 	}
 
-	return Model{
+	return MainMenuModel{
 		Menu: Menu{
 			Title: "Welcome!",
 			Options: []Option{
@@ -102,11 +101,11 @@ func InitialModel() tea.Model {
 	}
 }
 
-func (m Model) Init() tea.Cmd {
+func (m MainMenuModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m MainMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -133,7 +132,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Quit = true
 				return m, tea.Quit
 			case "Options":
-			return options.InitialModel(), nil
+				return OptionsInitialModel(m), nil
 			default:
 				return m, nil
 			}
@@ -151,7 +150,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m MainMenuModel) View() string {
 	if m.Quit {
 		return ""
 	}

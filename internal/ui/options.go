@@ -1,9 +1,7 @@
-package options
+package ui
 
 import (
 	"fmt"
-
-	. "github.com/mec-nyan/kana-cli/internal/palette"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -11,49 +9,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const padding = 4
-
-var appStyle = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(Lavender))
-
 type (
-	Option struct {
-		Name string
-	}
-
-	Menu struct {
-		Title   string
-		Options []Option
-		Current int
-	}
-
-	keyMap struct {
-		Show   key.Binding
-		Next   key.Binding
-		Prev   key.Binding
-		Accept key.Binding
-		Quit   key.Binding
-	}
-
-	Model struct {
+	OptionsModel struct {
 		Menu
-		Help  help.Model
-		Keys  keyMap
-		Style lipgloss.Style
-		Quit  bool
+		MainMenu MainMenuModel
+		Help     help.Model
+		Keys     keyMap
+		Style    lipgloss.Style
+		Quit     bool
 	}
 )
 
-func (k keyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Show}
-}
-
-func (k keyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Show, k.Next, k.Prev, k.Accept, k.Quit},
-	}
-}
-
-func InitialModel() tea.Model {
+func OptionsInitialModel(main MainMenuModel) tea.Model {
 	keys := keyMap{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
@@ -77,7 +44,7 @@ func InitialModel() tea.Model {
 		),
 	}
 
-	return Model{
+	return OptionsModel{
 		Menu: Menu{
 			Title: "Options",
 			Options: []Option{
@@ -101,14 +68,15 @@ func InitialModel() tea.Model {
 		Keys:  keys,
 		Help:  help.New(),
 		Style: appStyle,
+		MainMenu: main,
 	}
 }
 
-func (m Model) Init() tea.Cmd {
+func (m OptionsModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m OptionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -134,6 +102,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "Quit":
 				m.Quit = true
 				return m, tea.Quit
+			case "Back":
+				return m.MainMenu, nil
 			default:
 				return m, nil
 			}
@@ -151,7 +121,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) View() string {
+func (m OptionsModel) View() string {
 	if m.Quit {
 		return ""
 	}
