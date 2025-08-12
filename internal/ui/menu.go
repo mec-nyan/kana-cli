@@ -39,6 +39,7 @@ type (
 		Help  help.Model
 		Keys  keyMap
 		Style lipgloss.Style
+		Opts  Options
 		Quit  bool
 	}
 )
@@ -53,7 +54,7 @@ func (k keyMap) FullHelp() [][]key.Binding {
 	}
 }
 
-func InitialModel() tea.Model {
+func InitialModel(opts Options) tea.Model {
 	keys := keyMap{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
@@ -98,6 +99,7 @@ func InitialModel() tea.Model {
 		Keys:  keys,
 		Help:  help.New(),
 		Style: appStyle,
+		Opts:  opts,
 	}
 }
 
@@ -108,6 +110,11 @@ func (m MainMenuModel) Init() tea.Cmd {
 func (m MainMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
+
+	case tea.WindowSizeMsg:
+		m.Style = m.Style.Width(msg.Width)
+		return m, nil
+
 	case tea.KeyMsg:
 
 		switch {
@@ -128,6 +135,11 @@ func (m MainMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// WIP
 			action := m.Menu.Options[m.Current].Name
 			switch action {
+			case "Start":
+				tm := KanaInitialModel(m, m.Opts)
+				km, _ := tm.(KanaModel)
+				km.Progress.Width = min(m.Style.GetWidth()-padding*2, maxBarWidth)
+				return km, nil
 			case "Quit":
 				m.Quit = true
 				return m, tea.Quit

@@ -1,4 +1,4 @@
-package hiragana
+package ui
 
 import (
 	"fmt"
@@ -17,12 +17,10 @@ import (
 )
 
 const (
-	padding     = 4
 	maxBarWidth = 80
 )
 
 var (
-	appStyle       = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(Lavender))
 	highlightStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(Mauve))
 	inputStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color(Teal))
 	hintStyle      = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(Overlay0))
@@ -34,7 +32,7 @@ type (
 		Auto bool
 	}
 
-	question struct {
+	Question struct {
 		hiragana string
 		romaji   []string
 		hints    []string
@@ -42,12 +40,12 @@ type (
 	}
 
 	KanaModel struct {
-		Questions []question
+		Questions []Question
 		current   int
 		textInput textinput.Model
 		tries     int
 		percent   int
-		progress  progress.Model
+		Progress  progress.Model
 		quit      bool
 		err       error
 		// TODO: Not implemented yet!
@@ -56,18 +54,19 @@ type (
 		// your input is compared with the current kana each time and move
 		// to the next question as soon as it it correct.
 		autoMode bool
-		keys     keyMap
+		keys     kanaKeyMap
 		help     help.Model
 		style    lipgloss.Style
 		hint     bool
 		end      bool
 		accuracy float64
+		menu     MainMenuModel
 	}
 
-	keyMap struct {
+	kanaKeyMap struct {
 		Show    key.Binding
 		Accept  key.Binding
-		Back    key.Binding
+		Menu    key.Binding
 		Command key.Binding
 		Hint    key.Binding
 		Help    key.Binding
@@ -79,18 +78,18 @@ type (
 	tickMsg struct{}
 )
 
-func (k keyMap) ShortHelp() []key.Binding {
+func (k kanaKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Show}
 }
 
-func (k keyMap) FullHelp() [][]key.Binding {
+func (k kanaKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Show, k.Accept, k.Back, k.Hint, k.Command, k.Help, k.Quit},
+		{k.Show, k.Accept, k.Menu, k.Hint, k.Command, k.Help, k.Quit},
 	}
 }
 
-func KanaInitialModel(opts Options) tea.Model {
-	var questions []question
+func KanaInitialModel(menu MainMenuModel, opts Options) tea.Model {
+	var questions []Question
 	// TODO: Shuffle
 	for _, table := range kana.Table {
 		// For now, only monographs
@@ -113,7 +112,7 @@ func KanaInitialModel(opts Options) tea.Model {
 			if row.Hiragana == "" {
 				continue
 			}
-			var q question
+			var q Question
 			q.hiragana = row.Hiragana
 			q.romaji = []string{row.Romaji}
 			if row.Alt != "" {
@@ -141,7 +140,7 @@ func KanaInitialModel(opts Options) tea.Model {
 	prog.EmptyColor = Surface0
 	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0))
 
-	keys := keyMap{
+	keys := kanaKeyMap{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -150,7 +149,7 @@ func KanaInitialModel(opts Options) tea.Model {
 			key.WithKeys(" ", tea.KeyEnter.String()),
 			key.WithHelp("space", "accept"),
 		),
-		Back: key.NewBinding(
+		Menu: key.NewBinding(
 			key.WithKeys(tea.KeyCtrlO.String()),
 			key.WithHelp("ctrl+o", "back"),
 		),
@@ -175,11 +174,12 @@ func KanaInitialModel(opts Options) tea.Model {
 	return KanaModel{
 		Questions: questions,
 		textInput: ti,
-		progress:  prog,
+		Progress:  prog,
 		keys:      keys,
 		help:      help.New(),
 		style:     appStyle,
 		autoMode:  opts.Auto,
+		menu:      menu,
 	}
 }
 
@@ -188,7 +188,7 @@ func (m KanaModel) Init() tea.Cmd {
 }
 
 func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var q question
+	var q Question
 	if m.current < len(m.Questions) {
 		q = m.Questions[m.current]
 	}
@@ -201,7 +201,7 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.style = m.style.Width(msg.Width)
-		m.progress.Width = min(msg.Width-padding*2, maxBarWidth)
+		m.Progress.Width = min(msg.Width-padding*2, maxBarWidth)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -261,7 +261,7 @@ You've done it!
 Accuracy: %0.1f%%
 
 %s`,
-			m.progress.ViewAs(1),
+			m.Progress.ViewAs(1),
 			float64(len(m.Questions))/float64(m.tries)*100,
 			m.help.View(m.keys))
 
@@ -296,7 +296,7 @@ Write in romaji: %s
 Accuracy: %0.1f%%
 
 %s`,
-		m.progress.ViewAs(progress/100),
+		m.Progress.ViewAs(progress/100),
 		highlightStyle.Render(q.hiragana),
 		m.textInput.View(),
 		hintStyle.Render(hint),
@@ -307,7 +307,7 @@ Accuracy: %0.1f%%
 }
 
 // TODO: How to check in autoMode?
-func (m KanaModel) checkAnswer(q question) (tea.Model, tea.Cmd) {
+func (m KanaModel) checkAnswer(q Question) (tea.Model, tea.Cmd) {
 	m.hint = false
 	m.tries++
 	guess := m.textInput.Value()
