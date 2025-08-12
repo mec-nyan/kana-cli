@@ -1,10 +1,9 @@
-package ui
+package options
 
 import (
 	"fmt"
 
 	. "github.com/mec-nyan/kana-cli/internal/palette"
-	"github.com/mec-nyan/kana-cli/internal/ui/options"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
@@ -80,13 +79,16 @@ func InitialModel() tea.Model {
 
 	return Model{
 		Menu: Menu{
-			Title: "Welcome!",
+			Title: "Options",
 			Options: []Option{
 				{
-					Name: "Start",
+					Name: "Sound",
 				},
 				{
-					Name: "Options",
+					Name: "Syllabary",
+				},
+				{
+					Name: "Back",
 				},
 				{
 					Name: "Help",
@@ -132,8 +134,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "Quit":
 				m.Quit = true
 				return m, tea.Quit
-			case "Options":
-			return options.InitialModel(), nil
 			default:
 				return m, nil
 			}
