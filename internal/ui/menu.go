@@ -3,64 +3,97 @@ package ui
 import (
 	"fmt"
 
+	. "github.com/mec-nyan/kana-cli/internal/palette"
+
+	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-type option struct {
-	Name     string
-	Selected bool
+const padding = 4
+
+var appStyle = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(Lavender))
+
+type (
+	Option struct {
+		Name     string
+		Selected bool
+	}
+
+	Menu struct {
+		Title   string
+		Options []Option
+		Current int
+	}
+
+	keyMap struct {
+		Next   key.Binding
+		Prev   key.Binding
+		Accept key.Binding
+		Quit   key.Binding
+	}
+
+	Model struct {
+		Menu
+		Help  help.Model
+		Keys  keyMap
+		Style lipgloss.Style
+		Quit  bool
+	}
+)
+
+func (k keyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Quit}
 }
 
-type step struct {
-	Name    string
-	Options []option
-}
-
-type Model struct {
-	Cursor      int
-	Steps       []step
-	CurrentStep int
+func (k keyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Next, k.Prev, k.Accept, k.Quit},
+	}
 }
 
 func InitialModel() tea.Model {
+	keys := keyMap{
+		Next: key.NewBinding(
+			key.WithKeys(tea.KeyCtrlN.String(), "j"),
+			key.WithHelp("j", "next"),
+		),
+		Prev: key.NewBinding(
+			key.WithKeys(tea.KeyCtrlP.String(), "k"),
+			key.WithHelp("k", "prev"),
+		),
+		Accept: key.NewBinding(
+			key.WithKeys(tea.KeyEnter.String(), " "),
+			key.WithHelp("enter", "accept"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys(tea.KeyCtrlC.String(), tea.KeyEsc.String(), "q"),
+			key.WithHelp("q", "quit"),
+		),
+	}
+
 	return Model{
-		Cursor: 0,
-		CurrentStep: 0,
-		Steps: []step{
-			{
-				Name: "Start",
-				Options: []option{
-					{
-						Name: "new game",
-					},
-					{
-						Name: "saved",
-					},
+		Menu: Menu{
+			Title: "Welcome!",
+			Options: []Option{
+				{
+					Name: "Start",
 				},
-			},
-			{
-				Name: "Syllabary",
-				Options: []option{
-					{
-						Name: "hiragana",
-					},
-					{
-						Name: "katakana",
-					},
+				{
+					Name: "Options",
 				},
-			},
-			{
-				Name: "Sound",
-				Options: []option{
-					{
-						Name: "on",
-					},
-					{
-						Name: "off",
-					},
+				{
+					Name: "Help",
+				},
+				{
+					Name: "Quit",
 				},
 			},
 		},
+		Keys: keys,
+		Help: help.New(),
+		Style: appStyle,
 	}
 }
 
@@ -69,41 +102,27 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	options := m.Steps[m.CurrentStep].Options
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 
-		switch msg.String() {
-		case "ctrl+c", "q":
+		switch {
+		case key.Matches(msg, m.Keys.Next):
+			if m.Menu.Current < len(m.Menu.Options)-1 {
+				m.Menu.Current++
+			}
+			return m, nil
+		case key.Matches(msg, m.Keys.Prev):
+			if m.Menu.Current > 0 {
+				m.Menu.Current--
+			}
+			return m, nil
+		case key.Matches(msg, m.Keys.Accept):
+			// TODO:
+			return m, nil
+		case key.Matches(msg, m.Keys.Quit):
+			m.Quit = true
 			return m, tea.Quit
-
-		case "ctrl+n", "j":
-			if m.Cursor < len(options)-1 {
-				m.Cursor++
-			}
-
-		case "ctrl+p", "k":
-			if m.Cursor > 0 {
-				m.Cursor--
-			}
-
-		case "enter", " ":
-			for i := range options {
-				if i == m.Cursor {
-					options[i].Selected = true
-				} else {
-					options[i].Selected = false
-				}
-			}
-			m.Steps[m.CurrentStep].Options = options
-			m.CurrentStep++
-			m.Cursor = 0
-
-			// For now, just quit.
-			if m.CurrentStep == len(m.Steps) {
-				return m, tea.Quit
-			}
 		}
 	}
 
@@ -111,24 +130,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	if m.CurrentStep == len(m.Steps) {
-		return ""
+	if m.Quit {
+		return m.Style.Render("Bye!")
 	}
 
-	options := m.Steps[m.CurrentStep]
+	s := m.Menu.Title + "\n\n"
 
-	s := options.Name + ":\n\n"
-
-	for i, choice := range options.Options {
-		cursor := " "
-		if m.Cursor == i {
-			cursor = ">"
+	for i, opt := range m.Menu.Options {
+		indicator := " "
+		if i == m.Current {
+			indicator = ">"
 		}
 
-		s += fmt.Sprintf("  %s %s\n", cursor, choice.Name)
+		s += fmt.Sprintf("%s %s\n\n", indicator, opt.Name)
 	}
 
-	s += "\n\n[j] next - [k] prev - [q] quit\n"
+	s += m.Help.View(m.Keys)
 
-	return s
+	return m.Style.Render(s)
 }
