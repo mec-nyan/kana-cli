@@ -3,6 +3,7 @@ package ui
 import (
 	. "github.com/mec-nyan/kana-cli/internal/palette"
 
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -16,10 +17,21 @@ var (
 			Bold(true),
 
 		highlight: lipgloss.NewStyle().
+			Foreground(lipgloss.ANSIColor(10)).
 			Bold(true),
 
-		hints:     lipgloss.NewStyle().
+		hints: lipgloss.NewStyle().
 			Italic(true),
+
+		progressOpts: progressOpts{
+			options: []progress.Option{
+				progress.WithFillCharacters('▂', '▂'),
+			},
+			empty:     "60",
+			full:      "2",
+			showPerc:  true,
+			percStyle: lipgloss.NewStyle().Foreground(lipgloss.ANSIColor(2)),
+		},
 	}
 
 	mochaStyle = theme{
@@ -37,5 +49,15 @@ var (
 		hints: lipgloss.NewStyle().
 			Italic(true).
 			Foreground(lipgloss.Color(Overlay0)),
+
+		progressOpts: progressOpts{
+			options: []progress.Option{
+				progress.WithGradient(Mauve, Sapphire),
+				progress.WithFillCharacters('▂', '▂'),
+			},
+			empty:     Surface0,
+			showPerc:  true,
+			percStyle: lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0)),
+		},
 	}
 )

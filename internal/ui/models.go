@@ -2,6 +2,7 @@ package ui
 
 import (
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -45,10 +46,18 @@ type (
 
 	tickMsg struct{}
 
+	progressOpts struct {
+		options   []progress.Option
+		full      string
+		empty     string
+		showPerc  bool
+		percStyle lipgloss.Style
+	}
 	theme struct {
 		global    lipgloss.Style
 		input     lipgloss.Style
 		highlight lipgloss.Style
 		hints     lipgloss.Style
+		progressOpts
 	}
 )

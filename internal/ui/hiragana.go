@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	. "github.com/mec-nyan/kana-cli/internal/palette"
 	"github.com/mec-nyan/kana-master/pkg/kana"
 
 	"github.com/charmbracelet/bubbles/help"
@@ -13,7 +12,6 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type (
@@ -108,9 +106,15 @@ func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
 	ti.Prompt = ""
 	ti.TextStyle = opts.theme.input
 
-	prog := progress.New(progress.WithGradient(Mauve, Sapphire), progress.WithFillCharacters('▂', '▂'))
-	prog.EmptyColor = Surface0
-	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0))
+	prog := progress.New(opts.progressOpts.options...)
+	if opts.progressOpts.empty != "" {
+		prog.EmptyColor = opts.progressOpts.empty
+	}
+	if opts.progressOpts.full != "" {
+		prog.FullColor = opts.progressOpts.full
+	}
+	prog.PercentageStyle = opts.progressOpts.percStyle
+	prog.ShowPercentage =  opts.progressOpts.showPerc
 
 	keys := gameKeys{
 		Show: key.NewBinding(
