@@ -11,10 +11,10 @@ import (
 type (
 	mainMenu struct {
 		menu
-		Help  help.Model
-		Keys  mainMenuKeys
+		Help help.Model
+		Keys mainMenuKeys
 		gameOptions
-		Quit  bool
+		Quit bool
 	}
 )
 
@@ -70,11 +70,11 @@ func MainMenuInitialModel(opts CLIOptions) tea.Model {
 				},
 			},
 		},
-		Keys:  keys,
-		Help:  help.New(),
+		Keys: keys,
+		Help: help.New(),
 		gameOptions: gameOptions{
 			CLIOptions: opts,
-			style:      appStyle,
+			theme:      defaultAppStyle,
 		},
 	}
 }
@@ -88,7 +88,7 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.style = m.style.Width(msg.Width)
+		m.theme.global = m.theme.global.Width(msg.Width)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -114,7 +114,7 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "Start":
 				tm := GameInitialModel(m, m.gameOptions)
 				km, _ := tm.(gameModel)
-				km.Progress.Width = min(m.style.GetWidth()-padding*2, maxBarWidth)
+				km.Progress.Width = min(m.theme.global.GetWidth()-padding*2, maxBarWidth)
 				return km, nil
 			case "Quit":
 				m.Quit = true
@@ -156,5 +156,5 @@ func (m mainMenu) View() string {
 
 	s += m.Help.View(m.Keys)
 
-	return m.style.Render(s)
+	return m.theme.global.Render(s)
 }

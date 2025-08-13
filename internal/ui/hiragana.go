@@ -61,8 +61,6 @@ func (k gameKeys) FullHelp() [][]key.Binding {
 }
 
 func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
-	opts.style = appStyle
-
 	var questions []question
 	// TODO: Shuffle
 	for _, table := range kana.Table {
@@ -108,7 +106,7 @@ func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
 	ti.CharLimit = 5
 	ti.Width = 5
 	ti.Prompt = ""
-	ti.TextStyle = inputStyle
+	ti.TextStyle = opts.theme.input
 
 	prog := progress.New(progress.WithGradient(Mauve, Sapphire), progress.WithFillCharacters('▂', '▂'))
 	prog.EmptyColor = Surface0
@@ -173,7 +171,7 @@ func (m gameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.WindowSizeMsg:
-		m.style = m.style.Width(msg.Width)
+		m.theme.global = m.theme.global.Width(msg.Width)
 		m.Progress.Width = min(msg.Width-padding*2, maxBarWidth)
 		return m, nil
 
@@ -241,7 +239,7 @@ Accuracy: %0.1f%%
 			float64(len(m.questions))/float64(m.tries)*100,
 			m.help.View(m.keys))
 
-		return m.style.Render(s)
+		return m.theme.global.Render(s)
 	}
 
 	if m.current >= len(m.questions) {
@@ -273,13 +271,13 @@ Accuracy: %0.1f%%
 
 %s`,
 		m.Progress.ViewAs(progress/100),
-		highlightStyle.Render(q.hiragana),
+		m.theme.highlight.Render(q.hiragana),
 		m.textInput.View(),
-		hintStyle.Render(hint),
+		m.theme.hints.Render(hint),
 		m.accuracy,
 		m.help.View(m.keys))
 
-	return m.style.Render(s)
+	return m.theme.global.Render(s)
 }
 
 // TODO: How to check in autoMode?

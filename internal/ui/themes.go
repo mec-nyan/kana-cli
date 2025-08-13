@@ -7,18 +7,35 @@ import (
 )
 
 var (
-	appStyle = lipgloss.NewStyle().
+	defaultAppStyle = theme{
+		global: lipgloss.NewStyle().
 			Padding(1, padding).
-			Foreground(lipgloss.Color(Lavender))
+			Foreground(lipgloss.ANSIColor(2)),
 
-	highlightStyle = lipgloss.NewStyle().
+		input: lipgloss.NewStyle().
+			Bold(true),
+
+		highlight: lipgloss.NewStyle().
+			Bold(true),
+
+		hints:     lipgloss.NewStyle().
+			Italic(true),
+	}
+
+	mochaStyle = theme{
+		global: lipgloss.NewStyle().
+			Padding(1, padding).
+			Foreground(lipgloss.Color(Lavender)),
+
+		input: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(Teal)),
+
+		highlight: lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color(Mauve))
+			Foreground(lipgloss.Color(Mauve)),
 
-	inputStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(Teal))
-
-	hintStyle = lipgloss.NewStyle().
+		hints: lipgloss.NewStyle().
 			Italic(true).
-			Foreground(lipgloss.Color(Overlay0))
+			Foreground(lipgloss.Color(Overlay0)),
+	}
 )

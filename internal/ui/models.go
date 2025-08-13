@@ -13,7 +13,7 @@ type (
 
 	gameOptions struct {
 		CLIOptions
-		style lipgloss.Style
+		theme
 	}
 
 	question struct {
@@ -44,4 +44,11 @@ type (
 	errMsg error
 
 	tickMsg struct{}
+
+	theme struct {
+		global    lipgloss.Style
+		input     lipgloss.Style
+		highlight lipgloss.Style
+		hints     lipgloss.Style
+	}
 )

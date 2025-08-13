@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type (
@@ -15,7 +14,7 @@ type (
 		mainMenu
 		Help  help.Model
 		Keys  mainMenuKeys
-		Style lipgloss.Style
+		theme
 		Quit  bool
 	}
 )
@@ -67,7 +66,7 @@ func OptionsInitialModel(main mainMenu) tea.Model {
 		},
 		Keys:     keys,
 		Help:     help.New(),
-		Style:    appStyle,
+		theme:    main.theme,
 		mainMenu: main,
 	}
 }
@@ -139,5 +138,5 @@ func (m optionsMenu) View() string {
 
 	s += m.Help.View(m.Keys)
 
-	return m.Style.Render(s)
+	return m.theme.global.Render(s)
 }
