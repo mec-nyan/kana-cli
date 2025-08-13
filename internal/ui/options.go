@@ -10,18 +10,18 @@ import (
 )
 
 type (
-	OptionsMenu struct {
-		Menu
-		MainMenu
+	optionsMenu struct {
+		menu
+		mainMenu
 		Help  help.Model
-		Keys  MenuKeys
+		Keys  mainMenuKeys
 		Style lipgloss.Style
 		Quit  bool
 	}
 )
 
-func OptionsInitialModel(main MainMenu) tea.Model {
-	keys := MenuKeys{
+func OptionsInitialModel(main mainMenu) tea.Model {
+	keys := mainMenuKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -44,10 +44,10 @@ func OptionsInitialModel(main MainMenu) tea.Model {
 		),
 	}
 
-	return OptionsMenu{
-		Menu: Menu{
+	return optionsMenu{
+		menu: menu{
 			Title: "Options",
-			Options: []Option{
+			Options: []option{
 				{
 					Name: "Sound",
 				},
@@ -68,15 +68,15 @@ func OptionsInitialModel(main MainMenu) tea.Model {
 		Keys:     keys,
 		Help:     help.New(),
 		Style:    appStyle,
-		MainMenu: main,
+		mainMenu: main,
 	}
 }
 
-func (m OptionsMenu) Init() tea.Cmd {
+func (m optionsMenu) Init() tea.Cmd {
 	return nil
 }
 
-func (m OptionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m optionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -84,26 +84,26 @@ func (m OptionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 
 		case key.Matches(msg, m.Keys.Next):
-			if m.Menu.Current < len(m.Menu.Options)-1 {
-				m.Menu.Current++
+			if m.menu.Current < len(m.menu.Options)-1 {
+				m.menu.Current++
 			}
 			return m, nil
 
 		case key.Matches(msg, m.Keys.Prev):
-			if m.Menu.Current > 0 {
-				m.Menu.Current--
+			if m.menu.Current > 0 {
+				m.menu.Current--
 			}
 			return m, nil
 
 		case key.Matches(msg, m.Keys.Accept):
 			// WIP
-			action := m.Menu.Options[m.Current].Name
+			action := m.menu.Options[m.Current].Name
 			switch action {
 			case "Quit":
 				m.Quit = true
 				return m, tea.Quit
 			case "Back":
-				return m.MainMenu, nil
+				return m.mainMenu, nil
 			default:
 				return m, nil
 			}
@@ -121,14 +121,14 @@ func (m OptionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m OptionsMenu) View() string {
+func (m optionsMenu) View() string {
 	if m.Quit {
 		return ""
 	}
 
-	s := m.Menu.Title + "\n\n"
+	s := m.menu.Title + "\n\n"
 
-	for i, opt := range m.Menu.Options {
+	for i, opt := range m.menu.Options {
 		indicator := " "
 		if i == m.Current {
 			indicator = "▶"

@@ -10,28 +10,28 @@ import (
 )
 
 type (
-	MainMenu struct {
-		Menu
+	mainMenu struct {
+		menu
 		Help  help.Model
-		Keys  MenuKeys
+		Keys  mainMenuKeys
 		Style lipgloss.Style
-		Opts  GameOptions
+		Opts  gameOptions
 		Quit  bool
 	}
 )
 
-func (k MenuKeys) ShortHelp() []key.Binding {
+func (k mainMenuKeys) ShortHelp() []key.Binding {
 	return []key.Binding{k.Show}
 }
 
-func (k MenuKeys) FullHelp() [][]key.Binding {
+func (k mainMenuKeys) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Show, k.Next, k.Prev, k.Accept, k.Quit},
 	}
 }
 
-func MainMenuInitialModel(opts GameOptions) tea.Model {
-	keys := MenuKeys{
+func MainMenuInitialModel(opts CLIOptions) tea.Model {
+	keys := mainMenuKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -54,10 +54,10 @@ func MainMenuInitialModel(opts GameOptions) tea.Model {
 		),
 	}
 
-	return MainMenu{
-		Menu: Menu{
+	return mainMenu{
+		menu: menu{
 			Title: "Welcome!",
-			Options: []Option{
+			Options: []option{
 				{
 					Name: "Start",
 				},
@@ -75,15 +75,18 @@ func MainMenuInitialModel(opts GameOptions) tea.Model {
 		Keys:  keys,
 		Help:  help.New(),
 		Style: appStyle,
-		Opts:  opts,
+		Opts: gameOptions{
+			CLIOptions: opts,
+			Style:      appStyle,
+		},
 	}
 }
 
-func (m MainMenu) Init() tea.Cmd {
+func (m mainMenu) Init() tea.Cmd {
 	return nil
 }
 
-func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
@@ -96,24 +99,24 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 
 		case key.Matches(msg, m.Keys.Next):
-			if m.Menu.Current < len(m.Menu.Options)-1 {
-				m.Menu.Current++
+			if m.menu.Current < len(m.menu.Options)-1 {
+				m.menu.Current++
 			}
 			return m, nil
 
 		case key.Matches(msg, m.Keys.Prev):
-			if m.Menu.Current > 0 {
-				m.Menu.Current--
+			if m.menu.Current > 0 {
+				m.menu.Current--
 			}
 			return m, nil
 
 		case key.Matches(msg, m.Keys.Accept):
 			// WIP
-			action := m.Menu.Options[m.Current].Name
+			action := m.menu.Options[m.Current].Name
 			switch action {
 			case "Start":
 				tm := GameInitialModel(m, m.Opts)
-				km, _ := tm.(GameModel)
+				km, _ := tm.(gameModel)
 				km.Progress.Width = min(m.Style.GetWidth()-padding*2, maxBarWidth)
 				return km, nil
 			case "Quit":
@@ -138,14 +141,14 @@ func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m MainMenu) View() string {
+func (m mainMenu) View() string {
 	if m.Quit {
 		return ""
 	}
 
-	s := m.Menu.Title + "\n\n"
+	s := m.menu.Title + "\n\n"
 
-	for i, opt := range m.Menu.Options {
+	for i, opt := range m.menu.Options {
 		indicator := " "
 		if i == m.Current {
 			indicator = "▶"

@@ -23,7 +23,7 @@ func main() {
 	testMode := *testModeShort || *testModeLong
 	autoMode := *autoModeShort || *autoModeLong
 
-	opts := ui.GameOptions{
+	opts := ui.CLIOptions{
 		Test: testMode,
 		Auto: autoMode,
 	}

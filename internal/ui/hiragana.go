@@ -16,42 +16,30 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-const (
-	maxBarWidth = 80
-)
-
-var (
-	highlightStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(Mauve))
-	inputStyle     = lipgloss.NewStyle().Foreground(lipgloss.Color(Teal))
-	hintStyle      = lipgloss.NewStyle().Italic(true).Foreground(lipgloss.Color(Overlay0))
-)
-
 type (
-	GameModel struct {
-		Questions []Question
-		current   int
-		textInput textinput.Model
-		tries     int
-		percent   int
-		Progress  progress.Model
-		quit      bool
-		err       error
-		// TODO: Not implemented yet!
-		// Add a menu entry to select autoMode "on/off".
-		// In autoMode, you don't need to press enter or space,
-		// your input is compared with the current kana each time and move
-		// to the next question as soon as it it correct.
-		autoMode bool
-		keys     GameKeys
-		help     help.Model
-		style    lipgloss.Style
+	gameState struct {
+		current  int
+		tries    int
+		percent  int
+		quit     bool
+		err      error
 		hint     bool
 		end      bool
 		accuracy float64
-		menu     MainMenu
 	}
 
-	GameKeys struct {
+	gameModel struct {
+		questions []question
+		gameState
+		gameOptions
+		textInput textinput.Model
+		Progress  progress.Model
+		keys      gameKeys
+		help      help.Model
+		menu      mainMenu
+	}
+
+	gameKeys struct {
 		Show    key.Binding
 		Accept  key.Binding
 		Menu    key.Binding
@@ -62,18 +50,20 @@ type (
 	}
 )
 
-func (k GameKeys) ShortHelp() []key.Binding {
+func (k gameKeys) ShortHelp() []key.Binding {
 	return []key.Binding{k.Show}
 }
 
-func (k GameKeys) FullHelp() [][]key.Binding {
+func (k gameKeys) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Show, k.Accept, k.Menu, k.Hint, k.Command, k.Help, k.Quit},
 	}
 }
 
-func GameInitialModel(menu MainMenu, opts GameOptions) tea.Model {
-	var questions []Question
+func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
+	opts.Style = appStyle
+
+	var questions []question
 	// TODO: Shuffle
 	for _, table := range kana.Table {
 		// For now, only monographs
@@ -96,7 +86,7 @@ func GameInitialModel(menu MainMenu, opts GameOptions) tea.Model {
 			if row.Hiragana == "" {
 				continue
 			}
-			var q Question
+			var q question
 			q.hiragana = row.Hiragana
 			q.romaji = []string{row.Romaji}
 			if row.Alt != "" {
@@ -124,7 +114,7 @@ func GameInitialModel(menu MainMenu, opts GameOptions) tea.Model {
 	prog.EmptyColor = Surface0
 	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0))
 
-	keys := GameKeys{
+	keys := gameKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -155,26 +145,25 @@ func GameInitialModel(menu MainMenu, opts GameOptions) tea.Model {
 		),
 	}
 
-	return GameModel{
-		Questions: questions,
-		textInput: ti,
-		Progress:  prog,
-		keys:      keys,
-		help:      help.New(),
-		style:     appStyle,
-		autoMode:  opts.Auto,
-		menu:      menu,
+	return gameModel{
+		questions:   questions,
+		gameOptions: opts,
+		textInput:   ti,
+		Progress:    prog,
+		keys:        keys,
+		help:        help.New(),
+		menu:        menu,
 	}
 }
 
-func (m GameModel) Init() tea.Cmd {
+func (m gameModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m GameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var q Question
-	if m.current < len(m.Questions) {
-		q = m.Questions[m.current]
+func (m gameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var q question
+	if m.current < len(m.questions) {
+		q = m.questions[m.current]
 	}
 
 	switch msg := msg.(type) {
@@ -184,7 +173,7 @@ func (m GameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.WindowSizeMsg:
-		m.style = m.style.Width(msg.Width)
+		m.Style = m.Style.Width(msg.Width)
 		m.Progress.Width = min(msg.Width-padding*2, maxBarWidth)
 		return m, nil
 
@@ -233,7 +222,7 @@ func (m GameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m GameModel) View() string {
+func (m gameModel) View() string {
 	if m.quit {
 		return "Good bye then!"
 	}
@@ -249,24 +238,24 @@ Accuracy: %0.1f%%
 
 %s`,
 			m.Progress.ViewAs(1),
-			float64(len(m.Questions))/float64(m.tries)*100,
+			float64(len(m.questions))/float64(m.tries)*100,
 			m.help.View(m.keys))
 
-		return m.style.Render(s)
+		return m.Style.Render(s)
 	}
 
-	if m.current >= len(m.Questions) {
+	if m.current >= len(m.questions) {
 		return "Nope!"
 	}
 
-	q := m.Questions[m.current]
+	q := m.questions[m.current]
 
 	hint := "Hint: ..."
 	if m.hint {
 		hint = "Hint: " + strings.Join(q.hints, ", ")
 	}
 
-	progress := 100.0 / float64(len(m.Questions)) * float64(m.current)
+	progress := 100.0 / float64(len(m.questions)) * float64(m.current)
 	if m.tries > 0 {
 		m.accuracy = float64(m.current) / float64(m.tries) * 100.0
 	}
@@ -290,18 +279,18 @@ Accuracy: %0.1f%%
 		m.accuracy,
 		m.help.View(m.keys))
 
-	return m.style.Render(s)
+	return m.Style.Render(s)
 }
 
 // TODO: How to check in autoMode?
-func (m GameModel) checkAnswer(q Question) (tea.Model, tea.Cmd) {
+func (m gameModel) checkAnswer(q question) (tea.Model, tea.Cmd) {
 	m.hint = false
 	m.tries++
 	guess := m.textInput.Value()
 	for _, rmj := range q.romaji {
 		if guess == rmj {
 			m.current++
-			if m.current == len(m.Questions) {
+			if m.current == len(m.questions) {
 				m.end = true
 				return m, tea.Tick(2*time.Second, func(t time.Time) tea.Msg {
 					return tickMsg{}
