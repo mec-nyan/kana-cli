@@ -61,7 +61,7 @@ func (k gameKeys) FullHelp() [][]key.Binding {
 }
 
 func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
-	opts.Style = appStyle
+	opts.style = appStyle
 
 	var questions []question
 	// TODO: Shuffle
@@ -173,7 +173,7 @@ func (m gameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 
 	case tea.WindowSizeMsg:
-		m.Style = m.Style.Width(msg.Width)
+		m.style = m.style.Width(msg.Width)
 		m.Progress.Width = min(msg.Width-padding*2, maxBarWidth)
 		return m, nil
 
@@ -241,7 +241,7 @@ Accuracy: %0.1f%%
 			float64(len(m.questions))/float64(m.tries)*100,
 			m.help.View(m.keys))
 
-		return m.Style.Render(s)
+		return m.style.Render(s)
 	}
 
 	if m.current >= len(m.questions) {
@@ -279,7 +279,7 @@ Accuracy: %0.1f%%
 		m.accuracy,
 		m.help.View(m.keys))
 
-	return m.Style.Render(s)
+	return m.style.Render(s)
 }
 
 // TODO: How to check in autoMode?

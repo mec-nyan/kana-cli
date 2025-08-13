@@ -13,7 +13,7 @@ type (
 
 	gameOptions struct {
 		CLIOptions
-		Style lipgloss.Style
+		style lipgloss.Style
 	}
 
 	question struct {

@@ -6,7 +6,6 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 type (
@@ -14,8 +13,7 @@ type (
 		menu
 		Help  help.Model
 		Keys  mainMenuKeys
-		Style lipgloss.Style
-		Opts  gameOptions
+		gameOptions
 		Quit  bool
 	}
 )
@@ -74,10 +72,9 @@ func MainMenuInitialModel(opts CLIOptions) tea.Model {
 		},
 		Keys:  keys,
 		Help:  help.New(),
-		Style: appStyle,
-		Opts: gameOptions{
+		gameOptions: gameOptions{
 			CLIOptions: opts,
-			Style:      appStyle,
+			style:      appStyle,
 		},
 	}
 }
@@ -91,7 +88,7 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		m.Style = m.Style.Width(msg.Width)
+		m.style = m.style.Width(msg.Width)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -115,9 +112,9 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			action := m.menu.Options[m.Current].Name
 			switch action {
 			case "Start":
-				tm := GameInitialModel(m, m.Opts)
+				tm := GameInitialModel(m, m.gameOptions)
 				km, _ := tm.(gameModel)
-				km.Progress.Width = min(m.Style.GetWidth()-padding*2, maxBarWidth)
+				km.Progress.Width = min(m.style.GetWidth()-padding*2, maxBarWidth)
 				return km, nil
 			case "Quit":
 				m.Quit = true
@@ -159,5 +156,5 @@ func (m mainMenu) View() string {
 
 	s += m.Help.View(m.Keys)
 
-	return m.Style.Render(s)
+	return m.style.Render(s)
 }
