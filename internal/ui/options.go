@@ -12,10 +12,10 @@ type (
 	optionsMenu struct {
 		menu
 		mainMenu
-		Help  help.Model
-		Keys  mainMenuKeys
+		Help help.Model
+		Keys mainMenuKeys
 		theme
-		Quit  bool
+		Quit bool
 	}
 )
 
@@ -52,6 +52,9 @@ func OptionsInitialModel(main mainMenu) tea.Model {
 				},
 				{
 					Name: "Syllabary",
+				},
+				{
+					Name: "Colours",
 				},
 				{
 					Name: "Back",
@@ -106,6 +109,8 @@ func (m optionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tea.Quit
 			case "Back":
 				return m.mainMenu, nil
+			case "Colours":
+				return ThemeMenuInitialModel(m), nil
 			default:
 				return m, nil
 			}

@@ -88,6 +88,9 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
+		// TODO: Find a better way to handle themes and themes variables.
+		defaultAppStyle.global = defaultAppStyle.global.Width(msg.Width)
+		mochaStyle.global = mochaStyle.global.Width(msg.Width)
 		m.theme.global = m.theme.global.Width(msg.Width)
 		return m, nil
 

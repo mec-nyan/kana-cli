@@ -42,6 +42,11 @@ type (
 		Quit   key.Binding
 	}
 
+	colorMenuKeys struct {
+		mainMenuKeys
+		Preview key.Binding
+	}
+
 	errMsg error
 
 	tickMsg struct{}
