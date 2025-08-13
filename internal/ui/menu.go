@@ -3,59 +3,35 @@ package ui
 import (
 	"fmt"
 
-	. "github.com/mec-nyan/kana-cli/internal/palette"
-
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-const padding = 4
-
-var appStyle = lipgloss.NewStyle().Padding(1, padding).Foreground(lipgloss.Color(Lavender))
-
 type (
-	Option struct {
-		Name string
-	}
-
-	Menu struct {
-		Title   string
-		Options []Option
-		Current int
-	}
-
-	keyMap struct {
-		Show   key.Binding
-		Next   key.Binding
-		Prev   key.Binding
-		Accept key.Binding
-		Quit   key.Binding
-	}
-
-	MainMenuModel struct {
+	MainMenu struct {
 		Menu
 		Help  help.Model
-		Keys  keyMap
+		Keys  MenuKeys
 		Style lipgloss.Style
-		Opts  Options
+		Opts  GameOptions
 		Quit  bool
 	}
 )
 
-func (k keyMap) ShortHelp() []key.Binding {
+func (k MenuKeys) ShortHelp() []key.Binding {
 	return []key.Binding{k.Show}
 }
 
-func (k keyMap) FullHelp() [][]key.Binding {
+func (k MenuKeys) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Show, k.Next, k.Prev, k.Accept, k.Quit},
 	}
 }
 
-func InitialModel(opts Options) tea.Model {
-	keys := keyMap{
+func MainMenuInitialModel(opts GameOptions) tea.Model {
+	keys := MenuKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -78,7 +54,7 @@ func InitialModel(opts Options) tea.Model {
 		),
 	}
 
-	return MainMenuModel{
+	return MainMenu{
 		Menu: Menu{
 			Title: "Welcome!",
 			Options: []Option{
@@ -103,11 +79,11 @@ func InitialModel(opts Options) tea.Model {
 	}
 }
 
-func (m MainMenuModel) Init() tea.Cmd {
+func (m MainMenu) Init() tea.Cmd {
 	return nil
 }
 
-func (m MainMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m MainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 
@@ -136,8 +112,8 @@ func (m MainMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			action := m.Menu.Options[m.Current].Name
 			switch action {
 			case "Start":
-				tm := KanaInitialModel(m, m.Opts)
-				km, _ := tm.(KanaModel)
+				tm := GameInitialModel(m, m.Opts)
+				km, _ := tm.(GameModel)
 				km.Progress.Width = min(m.Style.GetWidth()-padding*2, maxBarWidth)
 				return km, nil
 			case "Quit":
@@ -162,7 +138,7 @@ func (m MainMenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m MainMenuModel) View() string {
+func (m MainMenu) View() string {
 	if m.Quit {
 		return ""
 	}

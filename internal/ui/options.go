@@ -10,18 +10,18 @@ import (
 )
 
 type (
-	OptionsModel struct {
+	OptionsMenu struct {
 		Menu
-		MainMenu MainMenuModel
-		Help     help.Model
-		Keys     keyMap
-		Style    lipgloss.Style
-		Quit     bool
+		MainMenu
+		Help  help.Model
+		Keys  MenuKeys
+		Style lipgloss.Style
+		Quit  bool
 	}
 )
 
-func OptionsInitialModel(main MainMenuModel) tea.Model {
-	keys := keyMap{
+func OptionsInitialModel(main MainMenu) tea.Model {
+	keys := MenuKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -44,7 +44,7 @@ func OptionsInitialModel(main MainMenuModel) tea.Model {
 		),
 	}
 
-	return OptionsModel{
+	return OptionsMenu{
 		Menu: Menu{
 			Title: "Options",
 			Options: []Option{
@@ -65,18 +65,18 @@ func OptionsInitialModel(main MainMenuModel) tea.Model {
 				},
 			},
 		},
-		Keys:  keys,
-		Help:  help.New(),
-		Style: appStyle,
+		Keys:     keys,
+		Help:     help.New(),
+		Style:    appStyle,
 		MainMenu: main,
 	}
 }
 
-func (m OptionsModel) Init() tea.Cmd {
+func (m OptionsMenu) Init() tea.Cmd {
 	return nil
 }
 
-func (m OptionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m OptionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -121,7 +121,7 @@ func (m OptionsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m OptionsModel) View() string {
+func (m OptionsMenu) View() string {
 	if m.Quit {
 		return ""
 	}

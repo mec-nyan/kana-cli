@@ -27,19 +27,7 @@ var (
 )
 
 type (
-	Options struct {
-		Test bool
-		Auto bool
-	}
-
-	Question struct {
-		hiragana string
-		romaji   []string
-		hints    []string
-		played   bool
-	}
-
-	KanaModel struct {
+	GameModel struct {
 		Questions []Question
 		current   int
 		textInput textinput.Model
@@ -54,16 +42,16 @@ type (
 		// your input is compared with the current kana each time and move
 		// to the next question as soon as it it correct.
 		autoMode bool
-		keys     kanaKeyMap
+		keys     GameKeys
 		help     help.Model
 		style    lipgloss.Style
 		hint     bool
 		end      bool
 		accuracy float64
-		menu     MainMenuModel
+		menu     MainMenu
 	}
 
-	kanaKeyMap struct {
+	GameKeys struct {
 		Show    key.Binding
 		Accept  key.Binding
 		Menu    key.Binding
@@ -72,23 +60,19 @@ type (
 		Help    key.Binding
 		Quit    key.Binding
 	}
-
-	errMsg error
-
-	tickMsg struct{}
 )
 
-func (k kanaKeyMap) ShortHelp() []key.Binding {
+func (k GameKeys) ShortHelp() []key.Binding {
 	return []key.Binding{k.Show}
 }
 
-func (k kanaKeyMap) FullHelp() [][]key.Binding {
+func (k GameKeys) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Show, k.Accept, k.Menu, k.Hint, k.Command, k.Help, k.Quit},
 	}
 }
 
-func KanaInitialModel(menu MainMenuModel, opts Options) tea.Model {
+func GameInitialModel(menu MainMenu, opts GameOptions) tea.Model {
 	var questions []Question
 	// TODO: Shuffle
 	for _, table := range kana.Table {
@@ -140,7 +124,7 @@ func KanaInitialModel(menu MainMenuModel, opts Options) tea.Model {
 	prog.EmptyColor = Surface0
 	prog.PercentageStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0))
 
-	keys := kanaKeyMap{
+	keys := GameKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
 			key.WithHelp(";", "toggle keys"),
@@ -171,7 +155,7 @@ func KanaInitialModel(menu MainMenuModel, opts Options) tea.Model {
 		),
 	}
 
-	return KanaModel{
+	return GameModel{
 		Questions: questions,
 		textInput: ti,
 		Progress:  prog,
@@ -183,11 +167,11 @@ func KanaInitialModel(menu MainMenuModel, opts Options) tea.Model {
 	}
 }
 
-func (m KanaModel) Init() tea.Cmd {
+func (m GameModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m GameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var q Question
 	if m.current < len(m.Questions) {
 		q = m.Questions[m.current]
@@ -234,7 +218,7 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case key.Matches(msg, m.keys.Menu):
-		return m.menu, nil
+			return m.menu, nil
 
 		}
 
@@ -249,7 +233,7 @@ func (m KanaModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m KanaModel) View() string {
+func (m GameModel) View() string {
 	if m.quit {
 		return "Good bye then!"
 	}
@@ -310,7 +294,7 @@ Accuracy: %0.1f%%
 }
 
 // TODO: How to check in autoMode?
-func (m KanaModel) checkAnswer(q Question) (tea.Model, tea.Cmd) {
+func (m GameModel) checkAnswer(q Question) (tea.Model, tea.Cmd) {
 	m.hint = false
 	m.tries++
 	guess := m.textInput.Value()

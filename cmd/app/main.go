@@ -23,12 +23,12 @@ func main() {
 	testMode := *testModeShort || *testModeLong
 	autoMode := *autoModeShort || *autoModeLong
 
-	opts := ui.Options{
+	opts := ui.GameOptions{
 		Test: testMode,
 		Auto: autoMode,
 	}
 
-	p := tea.NewProgram(ui.InitialModel(opts))
+	p := tea.NewProgram(ui.MainMenuInitialModel(opts))
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Ups! Shit happens dude!\n")
 		os.Exit(1)
