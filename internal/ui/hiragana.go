@@ -114,7 +114,7 @@ func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
 		prog.FullColor = opts.progressOpts.full
 	}
 	prog.PercentageStyle = opts.progressOpts.percStyle
-	prog.ShowPercentage =  opts.progressOpts.showPerc
+	prog.ShowPercentage = opts.progressOpts.showPerc
 
 	keys := gameKeys{
 		Show: key.NewBinding(
@@ -180,8 +180,12 @@ func (m gameModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if msg.String() == tea.KeyCtrlL.String() {
+			return m, tea.ClearScreen
+		}
 
 		switch {
+
 		// There's no hiragana/katakana that starts with "q".
 		// We can safely use this to quit.
 		case key.Matches(msg, m.keys.Quit):

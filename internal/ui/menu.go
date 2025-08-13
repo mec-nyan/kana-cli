@@ -92,6 +92,9 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		if msg.String() == tea.KeyCtrlL.String() {
+			return m, tea.ClearScreen
+		}
 
 		switch {
 
