@@ -32,7 +32,7 @@ type (
 	}
 
 	question struct {
-		hiragana string
+		kana string
 		romaji   []string
 		hints    []string
 		played   bool

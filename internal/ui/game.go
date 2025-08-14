@@ -62,7 +62,7 @@ func (k gameKeys) FullHelp() [][]key.Binding {
 
 func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
 
-	questions := makeQuestions(opts.Test)
+	questions := makeQuestions(opts)
 	ti := makeGameInput(opts.theme.input)
 	pBar := makeProgressBar(opts.progressOpts)
 	keys := makeGameKeys()
@@ -199,7 +199,7 @@ Accuracy: %0.1f%%
 
 %s`,
 		m.Progress.ViewAs(progress/100),
-		m.theme.highlight.Render(q.hiragana),
+		m.theme.highlight.Render(q.kana),
 		m.textInput.View(),
 		m.theme.hints.Render(hint),
 		m.accuracy,
@@ -230,15 +230,15 @@ func (m gameModel) checkAnswer(q question) (tea.Model, tea.Cmd) {
 
 // Utility functions.
 
-func makeQuestions(test bool) []question {
+func makeQuestions(opts gameOptions) []question {
 	var questions []question
 
 	for _, table := range kana.Table {
 		row := table.Basic.Monographs
 		hints := getHints(row)
-		questions = appendRowQuestions(row, hints, questions)
+		questions = appendRowQuestions(row, hints, opts, questions)
 		// Play only one row in test mode.
-		if test {
+		if opts.Test {
 			break
 		}
 	}
@@ -267,14 +267,20 @@ func getHints(row kana.KanaRow) []string {
 	return hints
 }
 
-func appendRowQuestions(row kana.KanaRow, hints []string, questions []question) []question {
+func appendRowQuestions(
+	row kana.KanaRow, hints []string, opts gameOptions, questions []question) []question {
 
 	for _, row := range row {
 		if row.Hiragana == "" {
 			continue
 		}
 		var q question
-		q.hiragana = row.Hiragana
+		switch opts.syllabary {
+		case hiragana:
+			q.kana = row.Hiragana
+		case katakana:
+			q.kana = row.Katakana
+		}
 		q.romaji = []string{row.Romaji}
 		if row.Alt != "" {
 			q.romaji = append(q.romaji, row.Alt)
