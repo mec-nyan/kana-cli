@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/bubbles/progress"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type (
@@ -60,102 +61,17 @@ func (k gameKeys) FullHelp() [][]key.Binding {
 }
 
 func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
-	var questions []question
 
-	for _, table := range kana.Table {
-
-		var hints []string
-		for _, row := range table.Basic.Monographs {
-			if row.Hiragana == "" {
-				continue
-			}
-			var nextHint string
-			if row.Alt != "" {
-				nextHint = row.Alt
-			} else {
-				nextHint = row.Romaji
-			}
-			hints = append(hints, nextHint)
-		}
-
-		for _, row := range table.Basic.Monographs {
-			if row.Hiragana == "" {
-				continue
-			}
-			var q question
-			q.hiragana = row.Hiragana
-			q.romaji = []string{row.Romaji}
-			if row.Alt != "" {
-				q.romaji = append(q.romaji, row.Alt)
-			}
-			q.hints = hints
-			questions = append(questions, q)
-		}
-
-		// Play only one row in test mode.
-		if opts.Test {
-			break
-		}
-	}
-
-	rand.Shuffle(len(questions), func(i, j int) {
-		questions[i], questions[j] = questions[j], questions[i]
-	})
-
-	ti := textinput.New()
-	ti.Placeholder = ""
-	ti.Focus()
-	ti.CharLimit = 5
-	ti.Width = 5
-	ti.Prompt = ""
-	ti.TextStyle = opts.theme.input
-
-	prog := progress.New(opts.progressOpts.options...)
-	if opts.progressOpts.empty != "" {
-		prog.EmptyColor = opts.progressOpts.empty
-	}
-	if opts.progressOpts.full != "" {
-		prog.FullColor = opts.progressOpts.full
-	}
-	prog.PercentageStyle = opts.progressOpts.percStyle
-	prog.ShowPercentage = opts.progressOpts.showPerc
-
-	keys := gameKeys{
-		Show: key.NewBinding(
-			key.WithKeys(";"),
-			key.WithHelp(";", "toggle keys"),
-		),
-		Accept: key.NewBinding(
-			key.WithKeys(" ", tea.KeyEnter.String()),
-			key.WithHelp("space", "accept"),
-		),
-		Menu: key.NewBinding(
-			key.WithKeys(tea.KeyCtrlO.String()),
-			key.WithHelp("ctrl+o", "back to main menu"),
-		),
-		Hint: key.NewBinding(
-			key.WithKeys("/"),
-			key.WithHelp("/", "gimme a hint"),
-		),
-		Command: key.NewBinding(
-			key.WithKeys(":"),
-			key.WithHelp(":", "cmd mode"),
-		),
-		Help: key.NewBinding(
-			key.WithKeys("?"),
-			key.WithHelp("?", "help"),
-		),
-		Quit: key.NewBinding(
-			key.WithKeys("q", tea.KeyEsc.String(), tea.KeyCtrlC.String()),
-			key.WithHelp("q", "quit"),
-		),
-	}
+	questions := makeQuestions(opts.Test)
+	ti := makeGameInput(opts.theme.input)
+	pBar := makeProgressBar(opts.progressOpts)
+	keys := makeGameKeys()
 
 	return gameModel{
 		questions:   questions,
 		gameOptions: opts,
 		textInput:   ti,
-		Progress:    prog,
+		Progress:    pBar,
 		keys:        keys,
 		help:        help.New(),
 		menu:        menu,
@@ -310,4 +226,123 @@ func (m gameModel) checkAnswer(q question) (tea.Model, tea.Cmd) {
 	}
 	m.textInput.Reset()
 	return m, nil
+}
+
+// Utility functions.
+
+func makeQuestions(test bool) []question {
+	var questions []question
+
+	for _, table := range kana.Table {
+		row := table.Basic.Monographs
+		hints := getHints(row)
+		questions = appendRowQuestions(row, hints, questions)
+		// Play only one row in test mode.
+		if test {
+			break
+		}
+	}
+
+	rand.Shuffle(len(questions), func(i, j int) {
+		questions[i], questions[j] = questions[j], questions[i]
+	})
+
+	return questions
+}
+
+func getHints(row kana.KanaRow) []string {
+	var hints []string
+	for _, row := range row {
+		if row.Hiragana == "" {
+			continue
+		}
+		var nextHint string
+		if row.Alt != "" {
+			nextHint = row.Alt
+		} else {
+			nextHint = row.Romaji
+		}
+		hints = append(hints, nextHint)
+	}
+	return hints
+}
+
+func appendRowQuestions(row kana.KanaRow, hints []string, questions []question) []question {
+
+	for _, row := range row {
+		if row.Hiragana == "" {
+			continue
+		}
+		var q question
+		q.hiragana = row.Hiragana
+		q.romaji = []string{row.Romaji}
+		if row.Alt != "" {
+			q.romaji = append(q.romaji, row.Alt)
+		}
+		q.hints = hints
+		questions = append(questions, q)
+	}
+	return questions
+}
+
+func makeGameInput(style lipgloss.Style) textinput.Model {
+
+	ti := textinput.New()
+	ti.Placeholder = ""
+	ti.Focus()
+	ti.CharLimit = 5
+	ti.Width = 5
+	ti.Prompt = ""
+	ti.TextStyle = style
+
+	return ti
+}
+
+func makeProgressBar(opts progressOpts) progress.Model {
+
+	pBar := progress.New(opts.options...)
+	if opts.empty != "" {
+		pBar.EmptyColor = opts.empty
+	}
+	if opts.full != "" {
+		pBar.FullColor = opts.full
+	}
+	pBar.PercentageStyle = opts.percStyle
+	pBar.ShowPercentage = opts.showPerc
+
+	return pBar
+}
+
+func makeGameKeys() gameKeys {
+
+	return gameKeys{
+		Show: key.NewBinding(
+			key.WithKeys(";"),
+			key.WithHelp(";", "toggle keys"),
+		),
+		Accept: key.NewBinding(
+			key.WithKeys(" ", tea.KeyEnter.String()),
+			key.WithHelp("space", "accept"),
+		),
+		Menu: key.NewBinding(
+			key.WithKeys(tea.KeyCtrlO.String()),
+			key.WithHelp("ctrl+o", "back to main menu"),
+		),
+		Hint: key.NewBinding(
+			key.WithKeys("/"),
+			key.WithHelp("/", "gimme a hint"),
+		),
+		Command: key.NewBinding(
+			key.WithKeys(":"),
+			key.WithHelp(":", "cmd mode"),
+		),
+		Help: key.NewBinding(
+			key.WithKeys("?"),
+			key.WithHelp("?", "help"),
+		),
+		Quit: key.NewBinding(
+			key.WithKeys("q", tea.KeyEsc.String(), tea.KeyCtrlC.String()),
+			key.WithHelp("q", "quit"),
+		),
+	}
 }
