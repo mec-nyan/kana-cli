@@ -69,7 +69,7 @@ func ThemeMenuInitialModel(prev optionsMenu) tea.Model {
 					Name: "Mocha",
 				},
 				{
-					Name: "Purple",
+					Name: "Blue",
 				},
 				{
 					Name: "Back",

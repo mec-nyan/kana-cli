@@ -9,16 +9,17 @@ import (
 )
 
 type (
-	optionsMenu struct {
+	syllabaryMenu struct {
 		menu
-		mainMenu
+		optionsMenu
 		Help help.Model
 		Keys mainMenuKeys
 		Quit bool
 	}
 )
 
-func OptionsInitialModel(main mainMenu) tea.Model {
+
+func SyllabaryMenuInitialModel(prev optionsMenu) tea.Model {
 	keys := mainMenuKeys{
 		Show: key.NewBinding(
 			key.WithKeys(";"),
@@ -42,41 +43,32 @@ func OptionsInitialModel(main mainMenu) tea.Model {
 		),
 	}
 
-	return optionsMenu{
+	return syllabaryMenu{
 		menu: menu{
-			Title: "Options",
+			Title: "Practise",
 			Options: []option{
 				{
-					Name: "Sound",
+					Name: "Hiragana",
 				},
 				{
-					Name: "Syllabary",
-				},
-				{
-					Name: "Colours",
+					Name: "Katakana",
 				},
 				{
 					Name: "Back",
 				},
-				{
-					Name: "Help",
-				},
-				{
-					Name: "Quit",
-				},
 			},
 		},
-		Keys:     keys,
-		Help:     help.New(),
-		mainMenu: main,
+		Keys:        keys,
+		Help:        help.New(),
+		optionsMenu: prev,
 	}
 }
 
-func (m optionsMenu) Init() tea.Cmd {
+func (m syllabaryMenu) Init() tea.Cmd {
 	return nil
 }
 
-func (m optionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m syllabaryMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -99,20 +91,18 @@ func (m optionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case key.Matches(msg, m.Keys.Accept):
-			// WIP
 			action := m.menu.Options[m.Current].Name
 			switch action {
-			case "Quit":
-				m.Quit = true
-				return m, tea.Quit
+			case "Hiragana":
+				m.syllabary = hiragana
+				return m.optionsMenu, nil
+			case "Katakana":
+				m.syllabary = katakana
+				return m.optionsMenu, nil
 			case "Back":
-				return m.mainMenu, nil
-			case "Colours":
-				return ThemeMenuInitialModel(m), nil
-			case "Syllabary":
-				return SyllabaryMenuInitialModel(m), nil
+				return m.optionsMenu, nil
 			default:
-				return m, nil
+				return m.optionsMenu, nil
 			}
 
 		case key.Matches(msg, m.Keys.Quit):
@@ -128,7 +118,7 @@ func (m optionsMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m optionsMenu) View() string {
+func (m syllabaryMenu) View() string {
 	if m.Quit {
 		return ""
 	}

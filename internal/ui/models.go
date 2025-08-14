@@ -6,6 +6,13 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+type syllabary int
+
+const (
+	hiragana syllabary = iota
+	katakana
+)
+
 type (
 	CLIOptions struct {
 		Test bool
@@ -21,6 +28,7 @@ type (
 		CLIOptions
 		theme
 		screenSize
+		syllabary syllabary
 	}
 
 	question struct {
