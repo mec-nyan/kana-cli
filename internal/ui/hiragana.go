@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -60,9 +61,8 @@ func (k gameKeys) FullHelp() [][]key.Binding {
 
 func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
 	var questions []question
-	// TODO: Shuffle
+
 	for _, table := range kana.Table {
-		// For now, only monographs
 
 		var hints []string
 		for _, row := range table.Basic.Monographs {
@@ -97,6 +97,10 @@ func GameInitialModel(menu mainMenu, opts gameOptions) tea.Model {
 			break
 		}
 	}
+
+	rand.Shuffle(len(questions), func(i, j int) {
+		questions[i], questions[j] = questions[j], questions[i]
+	})
 
 	ti := textinput.New()
 	ti.Placeholder = ""
