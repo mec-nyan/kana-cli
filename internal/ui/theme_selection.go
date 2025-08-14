@@ -63,10 +63,10 @@ func ThemeMenuInitialModel(prev optionsMenu) tea.Model {
 			Title: "Colours",
 			Options: []option{
 				{
-					Name: "Default",
+					Name: "Mocha (default)",
 				},
 				{
-					Name: "Mocha",
+					Name: "Green",
 				},
 				{
 					Name: "Blue",
@@ -111,13 +111,13 @@ func (m themeMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.Keys.Preview):
 			action := m.menu.Options[m.Current].Name
 			switch action {
-			case "Default":
+			case "Mocha (default)":
 				m.theme = defaultAppStyle
 				return m, nil
-			case "Mocha":
-				m.theme = mochaStyle
+			case "Green":
+				m.theme = greenStyle
 				return m, nil
-			case "Purple":
+			case "Blue":
 				m.theme = blueStyle
 				return m, nil
 			default:
@@ -129,13 +129,13 @@ func (m themeMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			action := m.menu.Options[m.Current].Name
 			switch action {
 			// TODO: Find a better way to handle themes and themes variables.
-			case "Default":
+			case "Mocha (default)":
 				m.theme = defaultAppStyle
 				return m.optionsMenu, nil
-			case "Mocha":
-				m.theme = mochaStyle
+			case "Green":
+				m.theme = greenStyle
 				return m.optionsMenu, nil
-			case "Purple":
+			case "Blue":
 				m.theme = blueStyle
 				return m.optionsMenu, nil
 			case "Quit":

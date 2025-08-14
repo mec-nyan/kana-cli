@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	defaultAppStyle = theme{
+	greenStyle = theme{
 		global: lipgloss.NewStyle().
 			Padding(1, padding).
 			Foreground(lipgloss.ANSIColor(2)),
@@ -86,4 +86,6 @@ var (
 			percStyle: lipgloss.NewStyle().Foreground(lipgloss.Color(Blue)),
 		},
 	}
+
+	defaultAppStyle = mochaStyle
 )
