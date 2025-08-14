@@ -12,9 +12,15 @@ type (
 		Auto bool
 	}
 
+	screenSize struct {
+		width  int
+		height int
+	}
+
 	gameOptions struct {
 		CLIOptions
 		theme
+		screenSize
 	}
 
 	question struct {
@@ -56,6 +62,7 @@ type (
 		full      string
 		empty     string
 		showPerc  bool
+		width     int
 		percStyle lipgloss.Style
 	}
 	theme struct {

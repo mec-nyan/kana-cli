@@ -14,7 +14,6 @@ type (
 		optionsMenu
 		Help help.Model
 		Keys colorMenuKeys
-		theme
 		Quit bool
 	}
 )
@@ -46,7 +45,7 @@ func ThemeMenuInitialModel(prev optionsMenu) tea.Model {
 			),
 			Accept: key.NewBinding(
 				key.WithKeys(tea.KeyEnter.String(), " "),
-				key.WithHelp("enter", "accept"),
+				key.WithHelp("enter", "apply"),
 			),
 			Quit: key.NewBinding(
 				key.WithKeys(tea.KeyCtrlC.String(), tea.KeyEsc.String(), "q"),
@@ -70,13 +69,15 @@ func ThemeMenuInitialModel(prev optionsMenu) tea.Model {
 					Name: "Mocha",
 				},
 				{
+					Name: "Purple",
+				},
+				{
 					Name: "Back",
 				},
 			},
 		},
 		Keys:        keys,
 		Help:        help.New(),
-		theme:       prev.theme,
 		optionsMenu: prev,
 	}
 }
@@ -110,16 +111,14 @@ func (m themeMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.Keys.Preview):
 			action := m.menu.Options[m.Current].Name
 			switch action {
-			// TODO: Find a better way to handle themes and themes variables.
 			case "Default":
-				m.mainMenu.theme = defaultAppStyle
-				m.optionsMenu.theme = defaultAppStyle
 				m.theme = defaultAppStyle
 				return m, nil
 			case "Mocha":
-				m.mainMenu.theme = mochaStyle
-				m.optionsMenu.theme = mochaStyle
 				m.theme = mochaStyle
+				return m, nil
+			case "Purple":
+				m.theme = blueStyle
 				return m, nil
 			default:
 				return m, nil
@@ -131,14 +130,13 @@ func (m themeMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch action {
 			// TODO: Find a better way to handle themes and themes variables.
 			case "Default":
-				m.mainMenu.theme = defaultAppStyle
-				m.optionsMenu.theme = defaultAppStyle
 				m.theme = defaultAppStyle
 				return m.optionsMenu, nil
 			case "Mocha":
-				m.mainMenu.theme = mochaStyle
-				m.optionsMenu.theme = mochaStyle
 				m.theme = mochaStyle
+				return m.optionsMenu, nil
+			case "Purple":
+				m.theme = blueStyle
 				return m.optionsMenu, nil
 			case "Quit":
 				m.Quit = true
@@ -146,7 +144,7 @@ func (m themeMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "Back":
 				return m.optionsMenu, nil
 			default:
-				return m, nil
+				return m.optionsMenu, nil
 			}
 
 		case key.Matches(msg, m.Keys.Quit):

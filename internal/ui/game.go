@@ -310,6 +310,8 @@ func makeProgressBar(opts progressOpts) progress.Model {
 	pBar.PercentageStyle = opts.percStyle
 	pBar.ShowPercentage = opts.showPerc
 
+	pBar.Width = opts.width
+
 	return pBar
 }
 

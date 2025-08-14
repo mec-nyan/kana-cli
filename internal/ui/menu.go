@@ -88,10 +88,7 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
 	case tea.WindowSizeMsg:
-		// TODO: Find a better way to handle themes and themes variables.
-		defaultAppStyle.global = defaultAppStyle.global.Width(msg.Width)
-		mochaStyle.global = mochaStyle.global.Width(msg.Width)
-		m.theme.global = m.theme.global.Width(msg.Width)
+		m.gameOptions.width = msg.Width
 		return m, nil
 
 	case tea.KeyMsg:
@@ -120,7 +117,7 @@ func (m mainMenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "Start":
 				tm := GameInitialModel(m, m.gameOptions)
 				km, _ := tm.(gameModel)
-				km.Progress.Width = min(m.theme.global.GetWidth()-padding*2, maxBarWidth)
+				km.Progress.Width = min(m.gameOptions.width-padding*2, maxBarWidth)
 				return km, nil
 			case "Quit":
 				m.Quit = true

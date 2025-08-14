@@ -14,7 +14,6 @@ type (
 		mainMenu
 		Help help.Model
 		Keys mainMenuKeys
-		theme
 		Quit bool
 	}
 )
@@ -69,7 +68,6 @@ func OptionsInitialModel(main mainMenu) tea.Model {
 		},
 		Keys:     keys,
 		Help:     help.New(),
-		theme:    main.theme,
 		mainMenu: main,
 	}
 }

@@ -25,7 +25,7 @@ var (
 
 		progressOpts: progressOpts{
 			options: []progress.Option{
-				progress.WithFillCharacters('▂', '▂'),
+				progress.WithFillCharacters('▁', '▁'),
 			},
 			empty:     "60",
 			full:      "2",
@@ -58,6 +58,32 @@ var (
 			empty:     Surface0,
 			showPerc:  true,
 			percStyle: lipgloss.NewStyle().Foreground(lipgloss.Color(Subtext0)),
+		},
+	}
+
+	blueStyle = theme{
+		global: lipgloss.NewStyle().
+			Padding(1, padding).
+			Foreground(lipgloss.Color(Blue)),
+
+		input: lipgloss.NewStyle().
+			Bold(true),
+
+		highlight: lipgloss.NewStyle().
+			Foreground(lipgloss.Color(Blue)).
+			Bold(true),
+
+		hints: lipgloss.NewStyle().
+			Italic(true),
+
+		progressOpts: progressOpts{
+			options: []progress.Option{
+				progress.WithGradient(Blue, Lavender),
+				progress.WithFillCharacters('▁', '▁'),
+			},
+			empty:     Surface0,
+			showPerc:  true,
+			percStyle: lipgloss.NewStyle().Foreground(lipgloss.Color(Blue)),
 		},
 	}
 )
