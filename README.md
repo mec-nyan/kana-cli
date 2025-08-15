@@ -45,6 +45,7 @@ go run cmd/kli/main.go
 
 ## Wishlist:
 
+- [ ] Flashcards
 - [x] Hiragana
 - [x] Katakana
 - [ ] Kanji
@@ -54,3 +55,8 @@ go run cmd/kli/main.go
 - [ ] Grammar
 - [ ] Everyday phrases
 - [ ] A lot more, lol
+
+## Thanks to:
+
+- [Catppuccin](https://catppuccin.com/) for their awesome theme/palettes.
+- [Vim](https://www.vim.org/) and [Neovim](https://neovim.io/) for an amazing editor.
