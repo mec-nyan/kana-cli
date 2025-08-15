@@ -1,11 +1,17 @@
 # Kana-CLI
 
-Learn japanese from the command line.
+## Welcome to Kana-CLI!
 
-## TODO:
+This project aims to be a helpful tool for learners of the Japanese language. It's still in a very 
+early stage but you can use it to practise Hiragana and Katakana already.
 
-- [ ] Hiragana.
-- [ ] Katakana.
+![screenshot](./screenshots/kana-cli_screenshot_game.png)
+
+
+## Wish list:
+
+- [x] Hiragana.
+- [x] Katakana.
 - [ ] Numbers.
 - [ ] Words.
 - [ ] Grammar.
